@@ -1,4 +1,4 @@
-<h1>PLEASE USE "LETS CHAT" INSTEAD OF THIS. AURORACHAT IS KIND OF JANKY AND HAS ONLY CONSOLE TEXT</h1>
+<h1>PLEASE USE "LETS CHAT" INSTEAD OF THIS. AURORACHAT IS KIND OF JANKY</h1>
 
 <h2>Update Log (All versions that have the word "un-released" were never released, and all versions that have the word "indev" meant they are in development)</h2>
 
