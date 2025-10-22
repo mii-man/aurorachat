@@ -8,6 +8,7 @@
 #include <3ds.h> // delicious
 #include <citro2d.h> // delectable
 // text.h doesn't exist (well it does, but as a part of citro2d.)
+#include <malloc.h>
 
 #include <sys/socket.h> // networking
 #include <arpa/inet.h> // networking again
@@ -56,11 +57,12 @@ int main(int argc, char* argv[]) {
     }
 
 
+
+	struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 10000; // 10ms
 	char buffer[512];
     
-
-
-	
 	// Main loop
 	while (aptMainLoop()) {
 		
