@@ -58,17 +58,18 @@ int main(int argc, char* argv[]) {
 
 
 
-	fd_set readfds;
-	struct timeval timeout;
-
-	FD_ZERO(&readfds);
-    FD_SET(sock, &readfds);
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 10000; // 10ms
 	char buffer[512];
     
 	// Main loop
 	while (aptMainLoop()) {
+
+		fd_set readfds;
+		struct timeval timeout;
+	
+		FD_ZERO(&readfds);
+	    FD_SET(sock, &readfds);
+	    timeout.tv_sec = 0;
+	    timeout.tv_usec = 10000; // 10ms
 		
 		gspWaitForVBlank();
 		gfxSwapBuffers();
