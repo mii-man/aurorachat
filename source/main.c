@@ -1,39 +1,54 @@
-// aurorachat 
-// Made by mii-man
-// Description: A chatting app for 3DS
+// aurorachat
+// Author: mii-man
+// Description: A chatting application for 3DS
 
+// yes I did copy basically the entire hbchat codebase here and call it a day because ain't no way your original base was ever gonna work :sob:
+
+#include <3ds.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <3ds.h> // delicious
-#include <citro2d.h> // delectable
-// text.h doesn't exist (well it does, but as a part of citro2d.)
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <malloc.h>
 
-#include <sys/socket.h> // networking
-#include <arpa/inet.h> // networking again
-
-// keyboard
 #include <3ds/applets/swkbd.h>
 
-C2D_TextBuf tbuffer;
-C2D_Text text;
+#include <citro2d.h>
+
+C2D_TextBuf sbuffer;
+C2D_Text stext;
+
+C2D_TextBuf chatbuffer;
+C2D_Text chat;
+
+char chatstring[6000] = "-chat-";
+char usernameholder[64];
+
+float chatscroll = 20;
+
+int scene = 1;
+
+bool inacc = false;
 
 
-// bro, that is NOT where the brackets go :sob:
-int main(int argc, char* argv[]) {
-	
-	gfxInitDefault();
+
+int main(int argc, char **argv) {
+    gfxInitDefault();
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
     C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
-    C2D_Prepare(); // good
-	C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-    C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT); // you need these two things
+    C2D_Prepare();
+    C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
+    C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
+
+    sbuffer = C2D_TextBufNew(4096);
+    chatbuffer = C2D_TextBufNew(4096);
 
 
+    C2D_TextParse(&chat, chatbuffer, chatstring);
+    C2D_TextOptimize(&chat);
 
 
-	u32 *soc_buffer = memalign(0x1000, 0x100000);
+    u32 *soc_buffer = memalign(0x1000, 0x100000);
     if (!soc_buffer) {
         // placeholder
     }
@@ -49,88 +64,177 @@ int main(int argc, char* argv[]) {
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(3071); // I copied this directly from hbchat that's why this is what it is
-    server.sin_addr.s_addr = inet_addr(""); // server goes here (might help you with that bit, I'll explain)
+    server.sin_port = htons(3071); // mmm the entire hbchat codebase and its remains
+    server.sin_addr.s_addr = inet_addr(""); // put a server here
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
     }
 
+    char username[11];
 
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 10000; // 10ms
 
-	char buffer[512];
-    
-	// Main loop
-	while (aptMainLoop()) {
+    char buffer[512];
+    while (aptMainLoop()) {
+        gspWaitForVBlank();
+        hidScanInput();
 
-		fd_set readfds;
-		struct timeval timeout;
-	
-		FD_ZERO(&readfds);
-	    FD_SET(sock, &readfds);
-	    timeout.tv_sec = 0;
-	    timeout.tv_usec = 10000; // 10ms
-		
-		gspWaitForVBlank();
-		gfxSwapBuffers();
-		hidScanInput();
+        if (hidKeysDown() & KEY_A) {
+            char message[64];
+            char input[64];
+            SwkbdState swkbd;
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, 11);
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
-		u32 kDown = hidKeysDown();
-		if (kDown & KEY_R) {
-			send(sock, "lanburger", strlen("lanburger"), 0); // sends lanburger to server (without the quotes btw)
-		}
+            SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
+        }
 
-		// recieve from server
-		if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
+        if (hidKeysDown() & KEY_B) {
+            char message[64];
+            char msg[128];
+
+            char input[80];
+            SwkbdState swkbd;
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, 80);
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+
+            SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
+            if (button == SWKBD_BUTTON_CONFIRM) {
+                if (inacc) {
+                    sprintf(msg, "<%s>: %s", username, message);
+                }
+                if (!inacc) {
+                    sprintf(msg, "<%s>: %s", username, message);
+                }
+                send(sock, msg, strlen(msg), 0);
+                printf("Message sent!\n");
+            }
+        }
+
+        fd_set readfds;
+        struct timeval timeout;
+
+        FD_ZERO(&readfds);
+        FD_SET(sock, &readfds);
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 10000; // 10ms
+
+        if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
                 buffer[len] = '\0';
+
+                sprintf(chatstring, "%s\n%s", chatstring, buffer);
+
+                C2D_TextParse(&chat, chatbuffer, chatstring);
+                C2D_TextOptimize(&chat);
+                chatscroll = chatscroll - 25;
+
+                const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
+                if (parseResult != NULL && *parseResult != '\0') {
+                    chatbuffer = C2D_TextBufResize(chatbuffer, 8192);
+                    if (chatbuffer) {
+                        C2D_TextBufClear(chatbuffer);
+                        C2D_TextParse(&chat, chatbuffer, chatstring);
+                    }
+                }
+                C2D_TextOptimize(&chat);
             }
         }
 
 
+        if (strlen(chatstring) > 3500) {
+            strcpy(chatstring, "-chat-\n");
+            C2D_TextBufClear(chatbuffer);
+            C2D_TextParse(&chat, chatbuffer, chatstring);
+            C2D_TextOptimize(&chat);
+            chatscroll = 20;
+        }
 
 
+        if (hidKeysDown() & KEY_START) break;
 
-		
-		// C2D_Text() does not exist btw
+        if (hidKeysHeld() & KEY_CPAD_DOWN) {
+            chatscroll = chatscroll - 5;
+        }
 
-		// start rendering
-		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+        if (hidKeysHeld() & KEY_CPAD_UP) {
+            chatscroll = chatscroll + 5;
+        }
 
-		// begin top screen
+        if ((hidKeysDown() & KEY_L) && scene == 1) {
+            scene = 2;
+        }
+
+        if ((hidKeysDown() & KEY_X) && scene == 2) {
+            scene = 1;
+        }
+
+
+        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(top, C2D_Color32(255, 255, 255, 255));
         C2D_SceneBegin(top);
 
-		C2D_TextBufClear(tbuffer);
-        C2D_TextParse(&text, tbuffer, "aurorachat");
-        C2D_TextOptimize(&text);
 
-		C2D_DrawText(&text, 0, 150.0f, 0.0f, 0.5f, 0.7f, 0.7f);
+        if (scene == 1) {
+            C2D_TextBufClear(sbuffer);
+            C2D_TextParse(&stext, sbuffer, "aurorachat");
+            C2D_TextOptimize(&stext);
 
-		// idk why i use this twice but i do normally and it's been fine so far so it's whatever
-		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-		// begin bottom screen
+            C2D_DrawText(&stext, 0, 250.0f, 0.0f, 0.5f, 1.0f, 1.0f);
+
+            sprintf(usernameholder, "%s %s", "Username:", username);
+
+            C2D_TextBufClear(sbuffer);
+            C2D_TextParse(&stext, sbuffer, usernameholder);
+            C2D_TextOptimize(&stext);
+
+            C2D_DrawText(&stext, 0, 0.0f, 200.0f, 0.5f, 1.0f, 1.0f);
+
+
+            C2D_TextBufClear(sbuffer);
+            C2D_TextParse(&stext, sbuffer, "v0.0.1");
+            C2D_TextOptimize(&stext);
+
+            C2D_DrawText(&stext, 0, 352.0f, 25.0f, 0.5f, 0.6f, 0.6f);
+
+
+
+            C2D_TextBufClear(sbuffer);
+            C2D_TextParse(&stext, sbuffer, "A: Change Username\nB: Send Message\nL: Rules\n)");
+            C2D_TextOptimize(&stext);
+
+            C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
+
+        }
+
+
+        if (scene == 2) {
+            C2D_TextBufClear(sbuffer);
+            C2D_TextParse(&stext, sbuffer, "(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.");
+            C2D_TextOptimize(&stext);
+
+            C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
+        }
+
+
         C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 255));
         C2D_SceneBegin(bottom);
 
-
-		C2D_TextBufClear(tbuffer);
-        C2D_TextParse(&text, tbuffer, "bottom text");
-        C2D_TextOptimize(&text);
-
-		C2D_DrawText(&text, 0, 100.0f, 0.0f, 0.5f, 0.7f, 0.7f);
-
-		
-			
-        
+        C2D_DrawText(&chat, C2D_WordWrap, 0.0f, chatscroll, 0.5f, 0.5f, 0.5f, 290.0f);
 
 
 
-		if (kDown & KEY_START)
-			break; // leave
-	}
+        C3D_FrameEnd(0);
 
-	gfxExit();
-	return 0;
+    }
+    closesocket(sock);
+    socExit();
+    gfxExit();
+    return 0;
 }
