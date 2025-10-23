@@ -15,6 +15,66 @@
 
 #include <citro2d.h>
 
+// Audio functions and definitions
+
+#define SAMPLE_RATE 48000
+#define CHANNELS 2
+#define BUFFER_MS 120
+#define SAMPLES_PER_BUF (SAMPLE_RATE * BUFFER_MS / 1000)
+#define WAVEBUF_SIZE (SAMPLES_PER_BUF * CHANNELS * sizeof(int16_t))
+
+ndspWaveBuf waveBufs[2];
+int16_t *audioBuffer = NULL;
+LightEvent audioEvent;
+volatile bool quit = false;
+
+bool fillBuffer(OggOpusFile *file, ndspWaveBuf *buf) {
+    int total = 0;
+    while (total < SAMPLES_PER_BUF) {
+        int16_t *ptr = buf->data_pcm16 + (total * CHANNELS);
+        int ret = op_read_stereo(file, ptr, (SAMPLES_PER_BUF - total) * CHANNELS);
+        if (ret <= 0) break;
+        total += ret;
+    }
+    if (total == 0) return false;
+    buf->nsamples = total;
+    DSP_FlushDataCache(buf->data_pcm16, total * CHANNELS * sizeof(int16_t));
+    ndspChnWaveBufAdd(0, buf);
+    return true;
+}
+
+void audioCallback(void *arg) {
+    if (!quit) LightEvent_Signal(&audioEvent);
+}
+
+void audioThread(void *arg) {
+    OggOpusFile *file = (OggOpusFile*)arg;
+    while (!quit) {
+        for (int i = 0; i < 2; i++) {
+            if (waveBufs[i].status == NDSP_WBUF_DONE) {
+                if (!fillBuffer(file, &waveBufs[i])) { quit = true; return; }
+            }
+        }
+        LightEvent_Wait(&audioEvent);
+    }
+    return;
+}
+
+// it took me ages to figure this out, btw, if you compile this you're gonna need to install opusfile / libopusfile in devkitpro (might provide more info)
+
+
+// also audio doesn't work on emulators, only real hardware.
+
+
+
+
+
+
+
+
+
+
+
 C2D_TextBuf sbuffer;
 C2D_Text stext;
 
@@ -33,12 +93,21 @@ bool inacc = false;
 
 
 int main(int argc, char **argv) {
+    romfsInit();
     gfxInitDefault();
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
     C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
     C2D_Prepare();
     C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
+
+    ndspInit();
+    ndspSetOutputMode(NDSP_OUTPUT_STEREO);
+    ndspChnSetRate(0, SAMPLE_RATE);
+    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
+    ndspSetCallback(audioCallback, NULL);
+
+    OggOpusFile *file = op_open_file("romfs:/incomingmessage.opus", NULL); // you HAVE to use .opus, just convert files to opus and you're good.
 
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
@@ -127,6 +196,41 @@ int main(int argc, char **argv) {
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
+                // play sound (note: set sound in settings to stereo on 3ds, helps with volume cause it can be hard to hear sometimes.)
+                quit = true;
+                LightEvent_Signal(&audioEvent);
+                if (thread) {
+                    threadJoin(thread, U64_MAX);
+                    threadFree(thread);
+                }
+    
+                // Cleanup
+                if (file) op_free(file);
+                linearFree(audioBuffer);
+    
+                // Reopen file
+                file = op_open_file("romfs:/incomingmessage.opus", NULL);
+                if (!file) continue;
+    
+                // Reallocate and reset buffers
+                audioBuffer = linearAlloc(WAVEBUF_SIZE * 2);
+                memset(waveBufs, 0, sizeof(waveBufs));
+                for (int i = 0; i < 2; i++) {
+                    waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
+                    waveBufs[i].status = NDSP_WBUF_DONE;
+                }
+    
+                // Pre-fill both buffers
+                quit = false;
+                if (!fillBuffer(file, &waveBufs[0])) continue;
+                if (!fillBuffer(file, &waveBufs[1])) continue;
+    
+                // Restart thread
+                thread = threadCreate(audioThread, NULL, 32 * 1024, 0x18, 1, false);
+
+
+
+                
                 buffer[len] = '\0';
 
                 sprintf(chatstring, "%s\n%s", chatstring, buffer);
@@ -181,6 +285,21 @@ int main(int argc, char **argv) {
         C2D_SceneBegin(top);
 
 
+
+
+        if (waveBufs[0].status == NDSP_WBUF_DONE) {
+            if (!fillBuffer(file, &waveBufs[0]));
+        }
+        if (waveBufs[1].status == NDSP_WBUF_DONE) {
+            if (!fillBuffer(file, &waveBufs[1]));
+        }
+
+
+
+
+        
+
+
         if (scene == 1) {
             C2D_TextBufClear(sbuffer);
             C2D_TextParse(&stext, sbuffer, "aurorachat");
@@ -232,8 +351,18 @@ int main(int argc, char **argv) {
 
         C3D_FrameEnd(0);
 
+
+        svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
+
     }
+
+
+    if (file) op_free(file);
+    linearFree(audioBuffer);
+
+    
     closesocket(sock);
+    ndspExit();
     socExit();
     gfxExit();
     return 0;
