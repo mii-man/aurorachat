@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 
 
             C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "A: Change Username\nB: Send Message\nL: Rules\n)");
+            C2D_TextParse(&stext, sbuffer, "A: Change Username\nB: Send Message\nL: Rules)");
             C2D_TextOptimize(&stext);
 
             C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
