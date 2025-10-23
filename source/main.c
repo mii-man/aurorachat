@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <malloc.h>
+#include <opusfile.h> // i almost forgor
 
 #include <3ds/applets/swkbd.h>
 
