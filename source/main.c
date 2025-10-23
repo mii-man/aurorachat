@@ -110,6 +110,19 @@ int main(int argc, char **argv) {
 
     OggOpusFile *file = op_open_file("romfs:/incomingmessage.opus", NULL); // you HAVE to use .opus, just convert files to opus and you're good.
 
+    audioBuffer = linearAlloc(WAVEBUF_SIZE * 2);
+    memset(waveBufs, 0, sizeof(waveBufs));
+    for (int i = 0; i < 2; i++) {
+        waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
+        waveBufs[i].status = NDSP_WBUF_DONE;
+    }
+
+    LightEvent_Init(&audioEvent, RESET_ONESHOT);
+    Thread thread = threadCreate(audioThread, file, 32 * 1024, 0x18, 1, false);
+
+    if (!fillBuffer(file, &waveBufs[0]));
+    if (!fillBuffer(file, &waveBufs[1]));
+
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
 
