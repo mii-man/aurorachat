@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(3071); // mmm the entire hbchat codebase and its remains
+    server.sin_port = htons(8961); // Whoops. Forgot to change that when I changed the server port.
     server.sin_addr.s_addr = inet_addr(""); // put a server here
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
