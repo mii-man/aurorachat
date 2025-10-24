@@ -2,8 +2,6 @@ import socket
 import threading
 import time
 import sys
-import sys
-import subprocess
 
 # --- Auto-install missing dependency ---
 try:
