@@ -3,6 +3,7 @@
 // Description: A chatting application for 3DS
 
 // yes I did copy basically the entire hbchat codebase here and call it a day because ain't no way your original base was ever gonna work :sob:
+// as mii man, yes my base would never work ;(
 
 #include <3ds.h>
 #include <stdio.h>
