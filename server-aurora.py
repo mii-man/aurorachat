@@ -2,7 +2,18 @@ import socket
 import threading
 import time
 import sys
-from profanity import censor_profanity
+import subprocess
+
+# --- Auto-install missing dependency ---
+try:
+    from better_profanity import profanity
+except ImportError:
+    print("Installing 'better_profanity' module...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "better_profanity"])
+    from better_profanity import profanity
+
+# Initialize the profanity filter
+profanity.load_censor_words()
 
 # --- Configuration ---
 HOST = '0.0.0.0'
@@ -41,7 +52,7 @@ def process_chat_message(client_socket, message):
     rate_limit[client_socket] = now
     
     # 3. Profanity Check
-    censored_msg = censor_profanity(message.strip(), '*') 
+    censored_msg = profanity.censor(message.strip(), '*')
 
     print(f"Message Processed: {censored_msg}")
         
