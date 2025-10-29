@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_port = htons(8961); // Whoops. Forgot to change that when I changed the server port.
-    server.sin_addr.s_addr = inet_addr(""); // put a server here
+    server.sin_addr.s_addr = inet_addr("104.236.25.60"); // put a server here
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
@@ -332,7 +332,7 @@ int main(int argc, char **argv) {
 
 
             C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "v0.0.1");
+            C2D_TextParse(&stext, sbuffer, "v0.0.2");
             C2D_TextOptimize(&stext);
 
             C2D_DrawText(&stext, 0, 352.0f, 25.0f, 0.5f, 0.6f, 0.6f);
