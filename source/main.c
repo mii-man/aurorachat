@@ -211,39 +211,6 @@ int main(int argc, char **argv) {
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
-                // play sound (note: set sound in settings to stereo on 3ds, helps with volume cause it can be hard to hear sometimes.)
-                quit = true;
-                LightEvent_Signal(&audioEvent);
-                if (thread) {
-                    threadJoin(thread, U64_MAX);
-                    threadFree(thread);
-                }
-    
-                // Cleanup
-                if (file) op_free(file);
-                linearFree(audioBuffer);
-    
-                // Reopen file
-                file = op_open_file("romfs:/incomingmessage.opus", NULL);
-                if (!file) continue;
-    
-                // Reallocate and reset buffers
-                audioBuffer = linearAlloc(WAVEBUF_SIZE * 2);
-                memset(waveBufs, 0, sizeof(waveBufs));
-                for (int i = 0; i < 2; i++) {
-                    waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
-                    waveBufs[i].status = NDSP_WBUF_DONE;
-                }
-    
-                // Pre-fill both buffers
-                quit = false;
-                if (!fillBuffer(file, &waveBufs[0])) continue;
-                if (!fillBuffer(file, &waveBufs[1])) continue;
-    
-                // Restart thread
-                thread = threadCreate(audioThread, NULL, 32 * 1024, 0x18, 1, false);
-
-
 
                 
                 buffer[len] = '\0';
