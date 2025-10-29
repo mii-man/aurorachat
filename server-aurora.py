@@ -145,7 +145,7 @@ def start_server():
         print(f"Could not bind to port {PORT}: {e}", file=sys.stderr)
         sys.exit(1)
         
-    print(f'aurorachat server v0.0.1 running on port {PORT}.') # Hi this is hacker tron here! This server is completely compatible with hbchat clients! cool
+    print(f'aurorachat server v0.0.2 running on port {PORT}.') # Hi this is hacker tron here! This server is completely compatible with hbchat clients! cool
 
     while True:
         try:
