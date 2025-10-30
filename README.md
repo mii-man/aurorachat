@@ -14,4 +14,6 @@ A chatting application for the Nintendo 3DS and 2DS line of systems
 
 Note (From Virtualle): I have not given up on Let's Chat, I'm just helping mii-man get a good running start with aurorachat, and I'm bored, of course I'm still actively developing Let's Chat because it is my main focus, helping aurorachat is just a side-project for me, but still done regardless.
 
-I feel like aurorachat and Let's Chat existences are kind of like Juxt and other miiverse clones, they exist, but they help each other out from time to time.
+I feel like aurorachat and Let's Chat's existences are kind of like Juxt and other miiverse clones, they exist, but they help each other out from time to time.
+
+(shortly after, I realized there are no remaining miiverse clones 💀)
