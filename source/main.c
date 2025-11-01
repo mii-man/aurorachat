@@ -19,48 +19,6 @@
 
 // Audio functions and definitions
 
-#define SAMPLE_RATE 48000
-#define CHANNELS 2
-#define BUFFER_MS 120
-#define SAMPLES_PER_BUF (SAMPLE_RATE * BUFFER_MS / 1000)
-#define WAVEBUF_SIZE (SAMPLES_PER_BUF * CHANNELS * sizeof(int16_t))
-
-ndspWaveBuf waveBufs[2];
-int16_t *audioBuffer = NULL;
-LightEvent audioEvent;
-volatile bool quit = false;
-
-bool fillBuffer(OggOpusFile *file, ndspWaveBuf *buf) {
-    int total = 0;
-    while (total < SAMPLES_PER_BUF) {
-        int16_t *ptr = buf->data_pcm16 + (total * CHANNELS);
-        int ret = op_read_stereo(file, ptr, (SAMPLES_PER_BUF - total) * CHANNELS);
-        if (ret <= 0) break;
-        total += ret;
-    }
-    if (total == 0) return false;
-    buf->nsamples = total;
-    DSP_FlushDataCache(buf->data_pcm16, total * CHANNELS * sizeof(int16_t));
-    ndspChnWaveBufAdd(0, buf);
-    return true;
-}
-
-void audioCallback(void *arg) {
-    if (!quit) LightEvent_Signal(&audioEvent);
-}
-
-void audioThread(void *arg) {
-    OggOpusFile *file = (OggOpusFile*)arg;
-    while (!quit) {
-        for (int i = 0; i < 2; i++) {
-            if (waveBufs[i].status == NDSP_WBUF_DONE) {
-                if (!fillBuffer(file, &waveBufs[i])) { quit = true; return; }
-            }
-        }
-        LightEvent_Wait(&audioEvent);
-    }
-    return;
-}
 
 // it took me ages to figure this out, btw, if you compile this you're gonna need to install opusfile / libopusfile in devkitpro (might provide more info)
 
@@ -102,27 +60,6 @@ int main(int argc, char **argv) {
     C2D_Prepare();
     C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-
-    ndspInit();
-    ndspSetOutputMode(NDSP_OUTPUT_STEREO);
-    ndspChnSetRate(0, SAMPLE_RATE);
-    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
-    ndspSetCallback(audioCallback, NULL);
-
-    OggOpusFile *file = op_open_file("romfs:/incomingmessage.opus", NULL); // you HAVE to use .opus, just convert files to opus and you're good.
-
-    audioBuffer = linearAlloc(WAVEBUF_SIZE * 2);
-    memset(waveBufs, 0, sizeof(waveBufs));
-    for (int i = 0; i < 2; i++) {
-        waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
-        waveBufs[i].status = NDSP_WBUF_DONE;
-    }
-
-    LightEvent_Init(&audioEvent, RESET_ONESHOT);
-    Thread thread = threadCreate(audioThread, file, 32 * 1024, 0x18, 1, false);
-
-    if (!fillBuffer(file, &waveBufs[0]));
-    if (!fillBuffer(file, &waveBufs[1]));
 
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
