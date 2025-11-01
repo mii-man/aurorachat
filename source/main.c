@@ -229,10 +229,10 @@ int main(int argc, char **argv) {
 
 
             C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "v0.0.2");
+            C2D_TextParse(&stext, sbuffer, "v0.0.2.2");
             C2D_TextOptimize(&stext);
 
-            C2D_DrawText(&stext, 0, 352.0f, 25.0f, 0.5f, 0.6f, 0.6f);
+            C2D_DrawText(&stext, 0, 350.0f, 25.0f, 0.5f, 0.6f, 0.6f);
 
 
 
