@@ -205,12 +205,6 @@ int main(int argc, char **argv) {
 
 
 
-        if (waveBufs[0].status == NDSP_WBUF_DONE) {
-            if (!fillBuffer(file, &waveBufs[0]));
-        }
-        if (waveBufs[1].status == NDSP_WBUF_DONE) {
-            if (!fillBuffer(file, &waveBufs[1]));
-        }
 
 
 
