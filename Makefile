@@ -40,7 +40,9 @@ GRAPHICS	:=	gfx
 GFXBUILD	:=	$(BUILD)
 ROMFS		:=	romfs
 GFXBUILD	:=	$(ROMFS)/gfx
-
+APP_TITLE   :=  aurorachat
+APP_AUTHOR  :=  mii-man and other contributors
+APP_DESCRIPTION  :=  A chat app for 3DS based of of hbchat but more secure
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
