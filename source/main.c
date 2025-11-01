@@ -215,10 +215,9 @@ int main(int argc, char **argv) {
                 
                 buffer[len] = '\0';
 
-                sprintf(chatstring, "%s\n%s", chatstring, buffer);
-
-                C2D_TextParse(&chat, chatbuffer, chatstring);
-                C2D_TextOptimize(&chat);
+                char temp[6000];
+                snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
+                strncpy(chatstring, temp, sizeof(chatstring));
                 chatscroll = chatscroll - 25;
 
                 const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
