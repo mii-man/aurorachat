@@ -269,8 +269,6 @@ int main(int argc, char **argv) {
     }
 
 
-    if (file) op_free(file);
-    linearFree(audioBuffer);
 
     
     closesocket(sock);
