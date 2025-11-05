@@ -19,11 +19,12 @@ profanity.load_censor_words()
 HOST = '0.0.0.0'
 PORT = 8961
 RATE_LIMIT_MS = 2000
+MAX_MESSAGE_LENGTH = 456 
+# get this guy OUT of here :bangbang:
+TERMINATION_TRIGGER = "<Fleetway>" 
 
 # --- Global State ---
 clients = []
-# Banning system (banned_ips) has been REMOVED!
-# Rate limit is now keyed only by the client_socket object.
 rate_limit = {} 
 
 # --- Helper Functions ---
@@ -33,12 +34,31 @@ def process_chat_message(client_socket, message):
     """
     Helper function to process a single message from a client.
     """
-    if not message.strip():
+    message_strip = message.strip()
+    if not message_strip:
         return
 
-    # 1. Rate Limiting Check
+    # 1. Termination Trigger Check
+    if TERMINATION_TRIGGER in message_strip:
+        try:
+            farewell_message = "No no, we aren't doxxers here. Restart if you wanna come back"
+            client_socket.sendall(farewell_message.encode('utf-8'))
+        except Exception:
+            pass 
+        print(f"lmaooo fleetway detected get this guy OUT")
+        raise ConnectionResetError("Forced disconnect due to client's name being Fleetway.")
+    
+    # 2. Message Size Limit Check
+    if len(message_strip) > MAX_MESSAGE_LENGTH:
+        try:
+            reject_message = f'Message too large! Max length is {MAX_MESSAGE_LENGTH} characters.\n'
+            client_socket.sendall(reject_message.encode('utf-8'))
+        except Exception:
+            pass 
+        return
+
+    # 3. Rate Limiting Check
     now = int(time.time() * 1000)
-    # Rate limit key is the client_socket itself.
     last_msg = rate_limit.get(client_socket, 0)
     
     if now - last_msg < RATE_LIMIT_MS:
@@ -48,15 +68,15 @@ def process_chat_message(client_socket, message):
             pass 
         return 
         
-    # 2. Update Rate Limit (ONLY for valid messages)
+    # 4. Update Rate Limit (ONLY for valid messages)
     rate_limit[client_socket] = now
     
-    # 3. Profanity Check
-    censored_msg = profanity.censor(message.strip(), '*')
+    # 5. Profanity Check
+    censored_msg = profanity.censor(message_strip, '*')
 
     print(f"Message Processed: {censored_msg}")
         
-    # 5. Broadcast Message
+    # 6. Broadcast Message
     broadcast(f"{censored_msg}\n")
 
 
@@ -103,25 +123,26 @@ def handle_client(client_socket, client_address):
     clients.append(client_socket)
     
     try:
+        buffer = ""
         while True:
             # Receive data in chunks
             data = client_socket.recv(4096)
             if not data:
                 break
             
-            # Decode the entire received chunk
-            received_message = data.decode('utf-8', errors='ignore')
+            received_chunk = data.decode('utf-8', errors='ignore')
+            buffer += received_chunk
             
-            # Process the entire received chunk as a message
-            message_to_process = received_message.strip()
+
+            message_to_process = buffer.strip()
+            buffer = "" 
 
             if message_to_process:
                 process_chat_message(client_socket, message_to_process) 
             
     except ConnectionResetError:
-        print("Connection error from someplace: Connection reset.")
+        print("Connection error from someplace: Connection reset or forced disconnect.")
     except socket.timeout:
-        # LOGGING FIX: IP REMOVED
         print("Connection error from something: Timeout.")
     except Exception as err:
         print(f"Connection error from... you tell me because I forgot. OOOH I FORGOT I FORGOT I FORGOT I FORGOT I FORGOT: {err}", file=sys.stderr)
@@ -132,6 +153,7 @@ def handle_client(client_socket, client_address):
 # --- Main Server Logic ---
 
 def start_server():
+    # (This function remains unchanged)
     """
     Initializes and starts the TCP server.
     """
