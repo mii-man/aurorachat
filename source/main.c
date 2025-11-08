@@ -10,7 +10,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <malloc.h
+#include <malloc.h>
 // opusfile went here (idk how to install it and it messed up make) :sob: - mii man
 
 #include <3ds/applets/swkbd.h>
