@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
             char message[64];
             char input[64];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, 17); // made the username limit longer because of funny people such as: john nintendo, and gordon freemanλ
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, 21); // made the username limit even longer because 21 ha ha funny
             swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
