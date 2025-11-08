@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
         // placeholder
     }
 
-    char username[11];
+    char username[21]; //swkbd registers name, but client doesnt, now it does
 
     struct timeval timeout;
     timeout.tv_sec = 0;
