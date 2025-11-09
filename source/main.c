@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 10000; // 10ms
+    timeout.tv_usec = 0; // 10ms
 
     char buffer[512];
     while (aptMainLoop()) {
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
         FD_ZERO(&readfds);
         FD_SET(sock, &readfds);
         timeout.tv_sec = 0;
-        timeout.tv_usec = 10000; // 10ms
+        timeout.tv_usec = 0; // gives more FPS, aka yummy
 
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 
 
         if (strlen(chatstring) > 3500) {
-            strcpy(chatstring, "-chat-\n");
+            strcpy(chatstring, "-chat cleared!-\n");
             C2D_TextBufClear(chatbuffer);
             C2D_TextParse(&chat, chatbuffer, chatstring);
             C2D_TextOptimize(&chat);
@@ -239,7 +239,7 @@ int main(int argc, char **argv) {
         }
         if (theme == 2) {
             // rgb(0, 5, 46)
-            C2D_TargetClear(top, C2D_Color32(0, 5, 46, 255));
+            C2D_TargetClear(top, C2D_Color32(73, 73, 73, 255));
         }
         if (theme == 3) {
             // rgb(0, 26, 242)
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
             }
             if (theme == 2) {
                 C2D_TextBufClear(sbuffer);
-                C2D_TextParse(&stext, sbuffer, "Current Theme:\nSoothing Blue");
+                C2D_TextParse(&stext, sbuffer, "Current Theme:\nDeep Gray");
                 C2D_TextOptimize(&stext);
             }
             if (theme == 3) {
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
                 C2D_TextOptimize(&stext);
             }
 
-            C2D_DrawText(&stext, 0, 150.0f, 0.0f, 0.5f, 0.6f, 0.6f);
+            C2D_DrawText(&stext, 0, 150.0f, 0.0f, 0.3f, 0.4f, 0.4f);
 
         }
 
@@ -320,8 +320,8 @@ int main(int argc, char **argv) {
             C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 255));
         }
         if (theme == 2) {
-            // rgb(0, 5, 46)
-            C2D_TargetClear(bottom, C2D_Color32(0, 5, 46, 255));
+            // rgb(73, 73, 73)
+            C2D_TargetClear(bottom, C2D_Color32(73, 73, 73, 255));
         }
         if (theme == 3) {
             // rgb(0, 26, 242)
@@ -336,7 +336,9 @@ int main(int argc, char **argv) {
         C3D_FrameEnd(0);
 
 
-        svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
+        // svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
+        // audio is gone rn
+        // will bring it back soon
 
     }
 
