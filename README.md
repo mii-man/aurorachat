@@ -26,10 +26,9 @@ I feel like aurorachat and Let's Chat's existences are kind of like Juxt and oth
 
 Note (from hackertron): I don't really have anything better to do, but I help out virtualle with his projects so I will also be here assisting. This doesn't mean I'm working on aurorachat because I "have" to, basically copy and paste Virtualle's note except I don't develop Let's Chat
 
-<p>checklist if it was evil
+## checklist if it was evil
 - [X] basic chatting 
 - [X] awesome themes
 - [ ] account stuff
 - [ ] other stuff
 - [ ] sound stuff 
-</p>
