@@ -24,16 +24,18 @@
 
 
 // also audio doesn't work on emulators, only real hardware.
+// hey guys
 
 
 
 
-
-
-
-
-
-
+// hey guys
+// hey guys
+// hey guys
+// hey guys
+// hey guys
+// hey guys
+// hey guys
 
 C2D_TextBuf sbuffer;
 C2D_Text stext;
