@@ -298,24 +298,24 @@ int main(int argc, char **argv) {
             textcolor = C2D_Color32(255, 255, 255, 255);
         }
         if (theme == 4) {
-            textcolor = C2D_Color32(17, 255, 0);
+            textcolor = C2D_Color32(17, 255, 0, 255);
         }
 
         
 
 
         if (scene == 1) {
-            DrawText("aurorachat", 260.0f, 0.0f, 0, 0.5f, 1.0f, themecolor, false);
+            DrawText("aurorachat", 260.0f, 0.0f, 0, 0.5f, 1.0f, textcolor, false);
             
 
             sprintf(usernameholder, "%s %s", "Username:", username);
 
-            DrawText(usernameholder, 0.0f, 200.0f, 0, 0.5f, 1.0f, themecolor, false);
+            DrawText(usernameholder, 0.0f, 200.0f, 0, 0.5f, 1.0f, textcolor, false);
 
 
 
             
-            DrawText("v0.0.3.1", 350.0f, 25.0f, 0, 0.6f, 0.6f, themecolor, false);
+            DrawText("v0.0.3.1", 350.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
             
