@@ -5,6 +5,7 @@ Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) 
 
 <h2>Development Log</h2>
 <ul>
+<li>v0.0.3 - Added themes.</li>
 <li>v0.0.2.5 - Extended name length</li>
 <li>v0.0.2.3 and v0.0.2.4 - Added metadata (first incorrectly, then correctly.)</li>
 <li>v0.0.2.2 - Fixed an issue with what we think is RAM allocation. Fixed through removing audio.</li>
