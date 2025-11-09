@@ -288,6 +288,8 @@ int main(int argc, char **argv) {
         char *themetext;
         sprintf(themetext, "%s:\n%s", "Current Theme", themename);
 
+        DrawText(themename, 170.0f, 0.0f, 0.4f, 0.4f, textcolor);
+
         u32 textcolor;
         if (theme != 5) {
             textcolor = C2D_Color32(0, 0, 0, 255);
@@ -313,7 +315,7 @@ int main(int argc, char **argv) {
 
 
             
-            DrawText("v0.0.3.1", 340.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
+            DrawText("v0.0.3.1", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
             
