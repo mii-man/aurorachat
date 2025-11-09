@@ -3,7 +3,7 @@ A chatting application for the Nintendo 3DS and 2DS line of systems
 
 Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) by @ItsFuntum
 
-<h2>Update Log (All versions that have the word "un-released" were never released (or are currently unreleased), and all versions that have the word "indev" mean they are in development)</h2>
+<h2>Development Log</h2>
 <ul>
 <li>v0.0.2.5 - Extended name length</li>
 <li>v0.0.2.3 and v0.0.2.4 - Added metadata (first incorrectly, then correctly.)</li>
