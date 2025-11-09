@@ -131,6 +131,8 @@ int main(int argc, char **argv) {
     timeout.tv_sec = 0;
     timeout.tv_usec = 0; // NOT 10ms
 
+    u32 textcolor;
+
     char buffer[512];
     while (aptMainLoop()) {
         gspWaitForVBlank();
@@ -288,9 +290,8 @@ int main(int argc, char **argv) {
         char *themetext;
         sprintf(themetext, "%s:\n%s", "Current Theme", themename);
 
-        DrawText(themename, 170.0f, 0.0f, 0.4f, 0.4f, textcolor);
+        DrawText(themename, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
 
-        u32 textcolor;
         if (theme != 5) {
             textcolor = C2D_Color32(0, 0, 0, 255);
         }
