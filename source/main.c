@@ -148,20 +148,18 @@ int main(int argc, char **argv) {
         }
 
         if (hidKeysDown() & KEY_B) {
-            char message[64];
+            char message[80];
             char msg[128];
 
             char input[80];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, 80);
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 80);
             swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
             SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
             if (button == SWKBD_BUTTON_CONFIRM) {
-                if (inacc) {
-                    sprintf(msg, "<%s>: %s", username, message);
-                }
+                sprintf(msg, "<%s>: %s", username, message);
                 send(sock, msg, strlen(msg), 0);
             }
         }
@@ -305,17 +303,17 @@ int main(int argc, char **argv) {
 
 
         if (scene == 1) {
-            DrawText("aurorachat", 260.0f, 0.0f, 0, 0.5f, 1.0f, textcolor, false);
+            DrawText("aurorachat", 260.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
             
 
             sprintf(usernameholder, "%s %s", "Username:", username);
 
-            DrawText(usernameholder, 0.0f, 200.0f, 0, 0.5f, 1.0f, textcolor, false);
+            DrawText(usernameholder, 0.0f, 200.0f, 0, 1.0f, 1.0f, textcolor, false);
 
 
 
             
-            DrawText("v0.0.3.1", 350.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
+            DrawText("v0.0.3.1", 340.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
             
@@ -323,12 +321,12 @@ int main(int argc, char **argv) {
 
 
 
-            DrawText("A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
+            DrawText("A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme", 0.0f, 0.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
 
 
-            DrawText(themetext, 170.0f, 0.0f, 0, 0.3f, 0.4f, textcolor, false);
+            DrawText(themetext, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
 
         }
 
@@ -358,8 +356,7 @@ int main(int argc, char **argv) {
         }
         C2D_SceneBegin(bottom);
 
-        DrawText(themetext, 0.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
-        C2D_DrawText(&chat, C2D_WordWrap, 0.0f, chatscroll, 0.5f, 0.5f, 0.5f, 290.0f);
+        C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 0.0f, chatscroll, 0, 0.5, 0.5, textcolor, 290.0f);
 
 
 
