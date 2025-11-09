@@ -50,6 +50,8 @@ int scene = 1;
 
 bool inacc = false;
 
+int theme = 1;
+
 
 
 int main(int argc, char **argv) {
@@ -197,9 +199,42 @@ int main(int argc, char **argv) {
             scene = 1;
         }
 
+        if (hidKeysDown() & KEY_DUP) {
+            if (theme == 1) {
+                theme = 3;
+            }
+            if (theme == 2) {
+                theme = 1;
+            }
+            if (theme == 3) {
+                theme = 2;
+            }
+        }
+        if (hidKeysDown() & KEY_DDOWN) {
+            if (theme == 1) {
+                theme = 2;
+            }
+            if (theme == 2) {
+                theme = 3;
+            }
+            if (theme == 3) {
+                theme = 1;
+            }
+        }
+
 
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        C2D_TargetClear(top, C2D_Color32(255, 255, 255, 255));
+        if (theme == 1) {
+            C2D_TargetClear(top, C2D_Color32(255, 255, 255, 255));
+        }
+        if (theme == 2) {
+            // rgb(0, 5, 46)
+            C2D_TargetClear(top, C2D_Color32(0, 5, 46, 255));
+        }
+        if (theme == 3) {
+            // rgb(0, 26, 242)
+            C2D_TargetClear(top, C2D_Color32(0, 26, 242, 255));
+        }
         C2D_SceneBegin(top);
 
 
@@ -217,7 +252,7 @@ int main(int argc, char **argv) {
             C2D_TextParse(&stext, sbuffer, "aurorachat");
             C2D_TextOptimize(&stext);
 
-            C2D_DrawText(&stext, 0, 250.0f, 0.0f, 0.5f, 1.0f, 1.0f);
+            C2D_DrawText(&stext, 0, 255.0f, 0.0f, 0.5f, 1.0f, 1.0f);
 
             sprintf(usernameholder, "%s %s", "Username:", username);
 
@@ -237,10 +272,28 @@ int main(int argc, char **argv) {
 
 
             C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "A: Change Username\nB: Send Message\nL: Rules)");
+            C2D_TextParse(&stext, sbuffer, "A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme");
             C2D_TextOptimize(&stext);
 
             C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
+
+            if (theme == 1) {
+                C2D_TextBufClear(sbuffer);
+                C2D_TextParse(&stext, sbuffer, "Current Theme:\nAurora White");
+                C2D_TextOptimize(&stext);
+            }
+            if (theme == 2) {
+                C2D_TextBufClear(sbuffer);
+                C2D_TextParse(&stext, sbuffer, "Current Theme:\nSoothing Blue");
+                C2D_TextOptimize(&stext);
+            }
+            if (theme == 3) {
+                C2D_TextBufClear(sbuffer);
+                C2D_TextParse(&stext, sbuffer, "Current Theme:\nHomeblue Chat");
+                C2D_TextOptimize(&stext);
+            }
+
+            C2D_DrawText(&stext, 0, 50.0f, 0.0f, 0.5f, 0.6f, 0.6f);
 
         }
 
@@ -253,8 +306,17 @@ int main(int argc, char **argv) {
             C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
         }
 
-
-        C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 255));
+        if (theme == 1) {
+            C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 255));
+        }
+        if (theme == 2) {
+            // rgb(0, 5, 46)
+            C2D_TargetClear(bottom, C2D_Color32(0, 5, 46, 255));
+        }
+        if (theme == 3) {
+            // rgb(0, 26, 242)
+            C2D_TargetClear(bottom, C2D_Color32(0, 26, 242, 255));
+        }
         C2D_SceneBegin(bottom);
 
         C2D_DrawText(&chat, C2D_WordWrap, 0.0f, chatscroll, 0.5f, 0.5f, 0.5f, 290.0f);
