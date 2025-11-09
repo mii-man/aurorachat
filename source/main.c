@@ -52,6 +52,8 @@ bool inacc = false;
 
 int theme = 1;
 
+bool switched = false;
+
 
 
 int main(int argc, char **argv) {
@@ -200,27 +202,35 @@ int main(int argc, char **argv) {
         }
 
         if (hidKeysDown() & KEY_DUP) {
-            if (theme == 1) {
+            if (theme == 1 && !switched) {
                 theme = 3;
+                switched = true;
             }
-            if (theme == 2) {
+            if (theme == 2 && !switched) {
                 theme = 1;
+                switched = true;
             }
-            if (theme == 3) {
+            if (theme == 3 && !switched) {
                 theme = 2;
+                switched = true;
             }
         }
         if (hidKeysDown() & KEY_DDOWN) {
-            if (theme == 1) {
+            if (theme == 1 && !switched) {
                 theme = 2;
+                switched = true;
             }
-            if (theme == 2) {
+            if (theme == 2 && !switched) {
                 theme = 3;
+                switched = true;
             }
-            if (theme == 3) {
+            if (theme == 3 && !switched) {
                 theme = 1;
+                switched = true;
             }
         }
+
+        switched = false;
 
 
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
@@ -264,7 +274,7 @@ int main(int argc, char **argv) {
 
 
             C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "v0.0.2.5");
+            C2D_TextParse(&stext, sbuffer, "v0.0.3");
             C2D_TextOptimize(&stext);
 
             C2D_DrawText(&stext, 0, 350.0f, 25.0f, 0.5f, 0.6f, 0.6f);
@@ -293,7 +303,7 @@ int main(int argc, char **argv) {
                 C2D_TextOptimize(&stext);
             }
 
-            C2D_DrawText(&stext, 0, 50.0f, 0.0f, 0.5f, 0.6f, 0.6f);
+            C2D_DrawText(&stext, 0, 150.0f, 0.0f, 0.5f, 0.6f, 0.6f);
 
         }
 
