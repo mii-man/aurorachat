@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
                 C2D_TextOptimize(&stext);
             }
 
-            C2D_DrawText(&stext, 0, 150.0f, 0.0f, 0.3f, 0.4f, 0.4f);
+            C2D_DrawText(&stext, 0, 180.0f, 0.0f, 0.3f, 0.4f, 0.4f);
 
         }
 
