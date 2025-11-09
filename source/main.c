@@ -17,25 +17,9 @@
 
 #include <citro2d.h>
 
-// Audio functions and definitions
-
-
-// it took me ages to figure this out, btw, if you compile this you're gonna need to install opusfile / libopusfile in devkitpro (might provide more info)
-
-
-// also audio doesn't work on emulators, only real hardware.
-// hey guys
 
 
 
-
-// hey guys
-// hey guys
-// hey guys
-// hey guys
-// hey guys
-// hey guys
-// hey guys
 
 C2D_TextBuf sbuffer;
 C2D_Text stext;
@@ -55,6 +39,47 @@ bool inacc = false;
 int theme = 1;
 
 bool switched = false;
+
+
+
+
+
+
+
+
+
+
+// function time
+
+void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u32 color, bool wordwrap) {
+    C2D_TextBufClear(sbuffer);
+    C2D_TextParse(&stext, sbuffer, text);
+    C2D_TextOptimize(&stext);
+
+    if (!wordwrap) {
+        C2D_DrawText(&stext, C2D_WithColor, x, y, z, scaleX, scaleY, color);
+    }
+    if (wordwrap) {
+        C2D_DrawText(&stext, C2D_WithColor | C2D_WordWrap, x, y, z, scaleX, scaleY, color, 290.0f);
+    }
+}
+
+
+
+
+
+
+
+
+// intentional
+// haha
+
+
+
+
+
+
+
 
 
 
@@ -91,18 +116,20 @@ int main(int argc, char **argv) {
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(8961); // Whoops. Forgot to change that when I changed the server port.
-    server.sin_addr.s_addr = inet_addr("104.236.25.60"); // put a server here
+    server.sin_port = htons(8961); // new niche meme?
+    server.sin_addr.s_addr = inet_addr("104.236.25.60"); // one below 61 (new niche meme)
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
     }
 
     char username[21]; //swkbd registers name, but client doesnt, now it does
+    // okay
+    // was i the one who made that comment???
 
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 0; // 10ms
+    timeout.tv_usec = 0; // NOT 10ms
 
     char buffer[512];
     while (aptMainLoop()) {
@@ -113,8 +140,8 @@ int main(int argc, char **argv) {
             char message[64];
             char input[64];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, 21); // made the username limit even longer because 21 ha ha funny
-            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
             SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
@@ -135,11 +162,7 @@ int main(int argc, char **argv) {
                 if (inacc) {
                     sprintf(msg, "<%s>: %s", username, message);
                 }
-                if (!inacc) {
-                    sprintf(msg, "<%s>: %s", username, message);
-                }
                 send(sock, msg, strlen(msg), 0);
-                printf("Message sent!\n");
             }
         }
 
@@ -161,7 +184,7 @@ int main(int argc, char **argv) {
                 char temp[6000];
                 snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
                 strncpy(chatstring, temp, sizeof(chatstring));
-                chatscroll = chatscroll - 25;
+                chatscroll = chatscroll - 15; // testing with this
 
                 const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
                 if (parseResult != NULL && *parseResult != '\0') {
@@ -204,31 +227,21 @@ int main(int argc, char **argv) {
         }
 
         if (hidKeysDown() & KEY_DUP) {
-            if (theme == 1 && !switched) {
-                theme = 3;
+            if (!switched) {
+                theme++;
                 switched = true;
             }
-            if (theme == 2 && !switched) {
+            if (theme > 5) {
                 theme = 1;
-                switched = true;
-            }
-            if (theme == 3 && !switched) {
-                theme = 2;
-                switched = true;
             }
         }
         if (hidKeysDown() & KEY_DDOWN) {
-            if (theme == 1 && !switched) {
-                theme = 2;
+            if (!switched) {
+                theme--;
                 switched = true;
             }
-            if (theme == 2 && !switched) {
-                theme = 3;
-                switched = true;
-            }
-            if (theme == 3 && !switched) {
-                theme = 1;
-                switched = true;
+            if (theme < 1) {
+                theme = 5;
             }
         }
 
@@ -247,75 +260,81 @@ int main(int argc, char **argv) {
             // rgb(0, 26, 242)
             C2D_TargetClear(top, C2D_Color32(0, 26, 242, 255));
         }
+        if (theme == 4) {
+            C2D_TargetClear(top, C2D_Color32(0, 0, 0, 255));
+        }
+        if (theme == 5) {
+            C2D_TargetClear(top, C2D_Color32(23, 27, 57, 255));
+        }
         C2D_SceneBegin(top);
 
 
+        char *themename;
+        if (theme == 1) {
+            themename = "Aurora White";
+        }
+        if (theme == 2) {
+            themename = "Deep Gray";
+        }
+        if (theme == 3) {
+            themename = "Homeblue Chat";
+        }
+        if (theme == 4) {
+            themename = "Hackertron Style";
+        }
+        if (theme == 5) {
+            themename = "True Dark Mode";
+        }
 
 
+        char *themetext;
+        sprintf(themetext, "%s:\n%s", "Current Theme", themename);
 
-
-
+        u32 textcolor;
+        if (theme != 5) {
+            textcolor = C2D_Color32(0, 0, 0, 255);
+        }
+        if (theme == 5) {
+            textcolor = C2D_Color32(255, 255, 255, 255);
+        }
+        if (theme == 4) {
+            textcolor = C2D_Color32(17, 255, 0);
+        }
 
         
 
 
         if (scene == 1) {
-            C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "aurorachat");
-            C2D_TextOptimize(&stext);
-
-            C2D_DrawText(&stext, 0, 255.0f, 0.0f, 0.5f, 1.0f, 1.0f);
+            DrawText("aurorachat", 260.0f, 0.0f, 0, 0.5f, 1.0f, themecolor, false);
+            
 
             sprintf(usernameholder, "%s %s", "Username:", username);
 
-            C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, usernameholder);
-            C2D_TextOptimize(&stext);
-
-            C2D_DrawText(&stext, 0, 0.0f, 200.0f, 0.5f, 1.0f, 1.0f);
-
-
-            C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "v0.0.3");
-            C2D_TextOptimize(&stext);
-
-            C2D_DrawText(&stext, 0, 350.0f, 25.0f, 0.5f, 0.6f, 0.6f);
+            DrawText(usernameholder, 0.0f, 200.0f, 0, 0.5f, 1.0f, themecolor, false);
 
 
 
-            C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme");
-            C2D_TextOptimize(&stext);
+            
+            DrawText("v0.0.3.1", 350.0f, 25.0f, 0, 0.6f, 0.6f, themecolor, false);
+            
+            
+            
 
-            C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
 
-            if (theme == 1) {
-                C2D_TextBufClear(sbuffer);
-                C2D_TextParse(&stext, sbuffer, "Current Theme:\nAurora White");
-                C2D_TextOptimize(&stext);
-            }
-            if (theme == 2) {
-                C2D_TextBufClear(sbuffer);
-                C2D_TextParse(&stext, sbuffer, "Current Theme:\nDeep Gray");
-                C2D_TextOptimize(&stext);
-            }
-            if (theme == 3) {
-                C2D_TextBufClear(sbuffer);
-                C2D_TextParse(&stext, sbuffer, "Current Theme:\nHomeblue Chat");
-                C2D_TextOptimize(&stext);
-            }
 
-            C2D_DrawText(&stext, 0, 170.0f, 0.0f, 0.3f, 0.4f, 0.4f);
+
+            DrawText("A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
+            
+            
+
+
+            DrawText(themetext, 170.0f, 0.0f, 0, 0.3f, 0.4f, textcolor, false);
 
         }
 
 
         if (scene == 2) {
-            C2D_TextBufClear(sbuffer);
-            C2D_TextParse(&stext, sbuffer, "(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.");
-            C2D_TextOptimize(&stext);
-
-            C2D_DrawText(&stext, 0, 0.0f, 0.0f, 0.5f, 0.6f, 0.6f);
+            DrawText("(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
         }
 
         if (theme == 1) {
@@ -329,8 +348,17 @@ int main(int argc, char **argv) {
             // rgb(0, 26, 242)
             C2D_TargetClear(bottom, C2D_Color32(0, 26, 242, 255));
         }
+        if (theme == 4) {
+            // rgb(73, 73, 73)
+            C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 255));
+        }
+        if (theme == 5) {
+            // rgb(0, 26, 242)
+            C2D_TargetClear(bottom, C2D_Color32(23, 27, 57, 255));
+        }
         C2D_SceneBegin(bottom);
 
+        DrawText(themetext, 0.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
         C2D_DrawText(&chat, C2D_WordWrap, 0.0f, chatscroll, 0.5f, 0.5f, 0.5f, 290.0f);
 
 
