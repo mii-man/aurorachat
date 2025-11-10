@@ -303,18 +303,6 @@ int main(int argc, char **argv) {
 
         DrawText(themename, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
 
-        if (theme != 5 && theme != 6) {
-            textcolor = C2D_Color32(0, 0, 0, 255);
-        }
-        if (theme == 5) {
-            textcolor = C2D_Color32(255, 255, 255, 255);
-        }
-        if (theme == 4) {
-            textcolor = C2D_Color32(17, 255, 0, 255);
-        }
-        if (theme == 6) {
-            textcolor = C2D_Color32(255, 189, 97, 255);
-        }
 
         
 
