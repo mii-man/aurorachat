@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
 
 
             
-            DrawText("v0.0.3.1", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
+            DrawText("v0.0.3.2", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
             
