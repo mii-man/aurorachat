@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
                 theme++;
                 switched = true;
             }
-            if (theme > 5) {
+            if (theme > 8) {
                 theme = 1;
             }
         }
@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
                 switched = true;
             }
             if (theme < 1) {
-                theme = 5;
+                theme = 8;
             }
         }
 
