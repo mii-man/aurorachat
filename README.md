@@ -1,7 +1,12 @@
 <h1>aurorachat</h1>
 A chatting application for the Nintendo 3DS and 2DS line of systems
 
+Discord server coming soon!
+
+
 Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) by @ItsFuntum
+
+
 
 <h2>Development Log</h2>
 <ul>
