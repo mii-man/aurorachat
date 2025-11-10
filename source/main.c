@@ -132,6 +132,7 @@ int main(int argc, char **argv) {
     timeout.tv_usec = 0; // NOT 10ms
 
     u32 textcolor;
+    u32 themecolor;
 
     char buffer[512];
     while (aptMainLoop()) {
@@ -272,19 +273,45 @@ int main(int argc, char **argv) {
         char *themename;
         if (theme == 1) {
             themename = "Aurora White";
+            themecolor = C2D_Color32(255, 255, 255, 255);
+            textcolor = C2D_Color32(0, 0, 0, 255);
         }
         if (theme == 2) {
             themename = "Deep Gray";
+            themecolor = C2D_Color32(73, 73, 73, 255);
+            textcolor = C2D_Color32(0, 0, 0, 255);
         }
         if (theme == 3) {
             themename = "Homeblue Chat";
+            themecolor = C2D_Color32(0, 26, 242, 255);
+            textcolor = C2D_Color32(0, 0, 0, 255);
         }
         if (theme == 4) {
             themename = "Hackertron Style";
+            themecolor = C2D_Color32(0, 0, 0, 255);
+            textcolor = C2D_Color32(17, 255, 0, 255);
         }
         if (theme == 5) {
             themename = "True Dark Mode";
+            themecolor = C2D_Color32(23, 27, 57, 255);
+            textcolor = C2D_Color32(255, 255, 255, 255);
         }
+        if (theme == 6) {
+            themename = "Blurange";
+            themecolor = C2D_Color32(0, 25, 117, 255);
+            textcolor = C2D_Color32(255, 189, 97, 255);
+        }
+        if (theme == 7) {
+            themename = "Red Paint";
+            themecolor = C2D_Color32(255, 80, 80, 255);
+            textcolor = C2D_Color32(255, 255, 255, 255);
+        }
+        if (theme == 8) {
+            themename = "Deep Blue.";
+            themecolor = C2D_Color32(6, 0, 57, 255);
+            textcolor = C2D_Color32(255, 255, 255, 255);
+        }
+        
 
 
         char *themetext;
@@ -292,7 +319,7 @@ int main(int argc, char **argv) {
 
         DrawText(themename, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
 
-        if (theme != 5) {
+        if (theme != 5 && theme != 6) {
             textcolor = C2D_Color32(0, 0, 0, 255);
         }
         if (theme == 5) {
@@ -300,6 +327,9 @@ int main(int argc, char **argv) {
         }
         if (theme == 4) {
             textcolor = C2D_Color32(17, 255, 0, 255);
+        }
+        if (theme == 6) {
+            textcolor = C2D_Color32(255, 189, 97, 255);
         }
 
         
@@ -338,25 +368,8 @@ int main(int argc, char **argv) {
             DrawText("(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
         }
 
-        if (theme == 1) {
-            C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 255));
-        }
-        if (theme == 2) {
-            // rgb(73, 73, 73)
-            C2D_TargetClear(bottom, C2D_Color32(73, 73, 73, 255));
-        }
-        if (theme == 3) {
-            // rgb(0, 26, 242)
-            C2D_TargetClear(bottom, C2D_Color32(0, 26, 242, 255));
-        }
-        if (theme == 4) {
-            // rgb(73, 73, 73)
-            C2D_TargetClear(bottom, C2D_Color32(0, 0, 0, 255));
-        }
-        if (theme == 5) {
-            // rgb(0, 26, 242)
-            C2D_TargetClear(bottom, C2D_Color32(23, 27, 57, 255));
-        }
+        C2D_TargetClear(bottom, themecolor);
+        
         C2D_SceneBegin(bottom);
 
         C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 0.0f, chatscroll, 0, 0.5, 0.5, textcolor, 290.0f);
