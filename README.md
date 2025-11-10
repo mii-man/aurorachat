@@ -10,6 +10,7 @@ Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) 
 
 <h2>Development Log</h2>
 <ul>
+<li>v0.0.3.2 - Added 3 more themes and fixed up the theme manager</li>
 <li>v0.0.3.1 - Added 2 more themes and fixed some issues with the code</li>
 <li>v0.0.3 - Added themes.</li>
 <li>v0.0.2.5 - Extended name length</li>
