@@ -250,23 +250,7 @@ int main(int argc, char **argv) {
 
 
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        if (theme == 1) {
-            C2D_TargetClear(top, C2D_Color32(255, 255, 255, 255));
-        }
-        if (theme == 2) {
-            // rgb(0, 5, 46)
-            C2D_TargetClear(top, C2D_Color32(73, 73, 73, 255));
-        }
-        if (theme == 3) {
-            // rgb(0, 26, 242)
-            C2D_TargetClear(top, C2D_Color32(0, 26, 242, 255));
-        }
-        if (theme == 4) {
-            C2D_TargetClear(top, C2D_Color32(0, 0, 0, 255));
-        }
-        if (theme == 5) {
-            C2D_TargetClear(top, C2D_Color32(23, 27, 57, 255));
-        }
+        C2D_TargetClear(top, themecolor);
         C2D_SceneBegin(top);
 
 
