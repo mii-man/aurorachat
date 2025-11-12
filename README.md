@@ -42,6 +42,7 @@ Note (from hackertron): I don't really have anything better to do, but I help ou
 ## checklist if it was evil
 - [X] basic chatting 
 - [X] awesome themes
+- [ ] awesome encryption
 - [ ] account stuff
 - [ ] other stuff
 - [ ] sound stuff 
