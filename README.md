@@ -43,6 +43,7 @@ Note (from hackertron): I don't really have anything better to do, but I help ou
 - [X] basic chatting 
 - [X] awesome themes
 - [ ] awesome encryption
+- [ ] Console + Account linking through data unique to your console being transmitted over an unbreakable encryption system (awesome)
 - [ ] account stuff
 - [ ] other stuff
 - [ ] sound stuff 
