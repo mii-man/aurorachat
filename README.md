@@ -10,7 +10,7 @@ Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) 
 # Security
 We are currently working on end-to-end encryption (actually I don't know that you can call it that or not) that will prevent MITM (Man In The Middle) attacks and protect our users.
 
-Current ETA: 11/13/2025 (mm, dd, yy)
+Current ETA: 11/15/2025 (mm, dd, yy)
 
 
 
