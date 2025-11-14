@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <malloc.h>
-// opusfile went here (idk how to install it and it messed up make) :sob: - mii man
+#include <opusfile.h> // apparently this didnt mess with the compilation it was just a warning for me -.-
 
 #include <3ds/applets/swkbd.h>
 
