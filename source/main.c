@@ -298,15 +298,6 @@ int main(int argc, char **argv) {
         
 
 
-        char *themetext;
-        sprintf(themetext, "%s:\n%s", "Current Theme", themename);
-
-        DrawText(themename, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
-
-
-        
-
-
         if (scene == 1) {
             DrawText("aurorachat", 260.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
             
@@ -331,7 +322,7 @@ int main(int argc, char **argv) {
             
 
 
-            DrawText(themetext, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
+            DrawText(themename, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
 
         }
 
