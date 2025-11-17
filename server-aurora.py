@@ -2,15 +2,7 @@ import socket
 import threading
 import time
 import sys
-import subprocess
-
-# --- Auto-install missing dependency ---
-try:
-    from better_profanity import profanity
-except ImportError:
-    print("Installing 'better_profanity' module...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "better_profanity"])
-    from better_profanity import profanity
+from better_profanity import profanity
 
 # Initialize the profanity filter
 profanity.load_censor_words()
