@@ -47,4 +47,5 @@ Note (from hackertron): I don't really have anything better to do, but I help ou
 - [ ] Console + Account linking through data unique to your console being transmitted over an unbreakable encryption system (awesome)
 - [ ] account stuff
 - [ ] other stuff
-- [ ] sound stuff 
+- [ ] sound stuff
+- [ ] and all the stuff that we forgot 
