@@ -17,7 +17,8 @@ TERMINATION_TRIGGER = "<Fleetway>"
 
 # --- Global State ---
 clients = []
-rate_limit = {} 
+rate_limit = {}
+connection_times = {}
 
 # --- Helper Functions ---
 
@@ -111,9 +112,23 @@ def handle_client(client_socket, client_address):
     Handles all communication with a single client in a separate thread.
     """
 
-    print('Client connection established.')
+    client_ip = client_address[0]
+    now_ms = int(time.time() * 1000)
+
+    # connection rate limiting
+    last_connection = connection_times.get(client_ip, 0)
+    if now_ms - last_connection < RATE_LIMIT_MS:
+        try:
+            client_socket.close()
+        except Exception:
+            pass
+        return
+
+    connection_times[client_ip] = now_ms
+
     clients.append(client_socket)
-    
+    print(f"Client connection established: {client_ip}")
+
     try:
         buffer = ""
         while True:
@@ -124,24 +139,19 @@ def handle_client(client_socket, client_address):
             
             received_chunk = data.decode('utf-8', errors='ignore')
             buffer += received_chunk
-            
-
             message_to_process = buffer.strip()
             buffer = "" 
-
             if message_to_process:
                 process_chat_message(client_socket, message_to_process) 
-            
     except ConnectionResetError:
         print("Connection error from someplace: Connection reset or forced disconnect.")
     except socket.timeout:
         print("Connection error from something: Timeout.")
     except Exception as err:
         print(f"Connection error from... you tell me because I forgot. OOOH I FORGOT I FORGOT I FORGOT I FORGOT I FORGOT: {err}", file=sys.stderr)
-        
     finally:
         remove_client(client_socket)
-        
+
 # --- Main Server Logic ---
 
 def start_server():
