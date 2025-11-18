@@ -66,7 +66,7 @@ def process_chat_message(client_socket, message):
     # 5. Profanity Check
     censored_msg = profanity.censor(message_strip, '*')
 
-    print(f"Message Processed: {censored_msg}")
+    print(f"Message Processed: {repr(censored_msg)[1:-1]}")
         
     # 6. Broadcast Message
     broadcast(f"{censored_msg}\n")
