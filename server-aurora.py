@@ -127,7 +127,7 @@ def handle_client(client_socket, client_address):
     connection_times[client_ip] = now_ms
 
     clients.append(client_socket)
-    print(f"Client connection established: {client_ip}")
+    print(f"Client connection established.")
 
     try:
         buffer = ""
