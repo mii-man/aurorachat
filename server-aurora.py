@@ -15,7 +15,6 @@ RATE_LIMIT_MS = 2000
 MAX_MESSAGE_LENGTH = 456
 TERMINATION_TRIGGER = "<Fleetway>"
 
-# TLS cert/key files (adjust paths as needed)
 CERTFILE = "cert.pem"
 KEYFILE = "key.pem"
 
@@ -33,18 +32,20 @@ def process_chat_message(client_socket, message):
 
     if TERMINATION_TRIGGER in message_strip:
         try:
-            farewell_message = "No no, we aren't doxxers here. Restart if you wanna come back"
-            client_socket.sendall(farewell_message.encode('utf-8'))
-        except Exception:
+            client_socket.sendall(
+                b"No no, we aren't doxxers here. Restart if you wanna come back"
+            )
+        except:
             pass
-        print(f"lmaooo fleetway detected get this guy OUT")
-        raise ConnectionResetError("Forced disconnect due to client's name being Fleetway.")
+        print("lmaooo fleetway detected get this guy OUT")
+        raise ConnectionResetError("Forced disconnect due to Fleetway name")
 
     if len(message_strip) > MAX_MESSAGE_LENGTH:
         try:
-            reject_message = f'Message too large! Max length is {MAX_MESSAGE_LENGTH} characters.\n'
-            client_socket.sendall(reject_message.encode('utf-8'))
-        except Exception:
+            client_socket.sendall(
+                f"Message too large! Max length is {MAX_MESSAGE_LENGTH} characters.\n".encode()
+            )
+        except:
             pass
         return
 
@@ -52,31 +53,28 @@ def process_chat_message(client_socket, message):
     last_msg = rate_limit.get(client_socket, 0)
     if now - last_msg < RATE_LIMIT_MS:
         try:
-            client_socket.sendall('Spam detected! Wait 2 seconds.\n'.encode('utf-8'))
-        except Exception:
+            client_socket.sendall(b"Spam detected! Wait 2 seconds.\n")
+        except:
             pass
         return
 
-    # Update rate limit
     rate_limit[client_socket] = now
 
-    # Profanity censor (still server-side)
     censored_msg = profanity.censor(message_strip, '*')
-
     print(f"Message Processed: {repr(censored_msg)[1:-1]}")
-    broadcast(f"{censored_msg}\n")
+    broadcast(censored_msg + "\n")
 
 
 def broadcast(message):
-    sockets_to_remove = []
-    for client in clients:
+    dead = []
+    for c in clients:
         try:
-            client.sendall(message.encode('utf-8'))
-        except Exception:
-            sockets_to_remove.append(client)
+            c.sendall(message.encode("utf-8"))
+        except:
+            dead.append(c)
 
-    for client in sockets_to_remove:
-        remove_client(client)
+    for c in dead:
+        remove_client(c)
 
 
 def remove_client(client_socket):
@@ -86,105 +84,134 @@ def remove_client(client_socket):
         del rate_limit[client_socket]
     try:
         client_socket.close()
-    except Exception:
+    except:
         pass
-    print(f"Some sort of 'client' seems to have 'disconnected.'")
+    print("Client disconnected.")
 
 
-def handle_client(client_socket, client_address):
-    client_ip = client_address[0]
+def handle_client(ssl_sock, addr):
+    client_ip = addr[0]
     now_ms = int(time.time() * 1000)
 
-    last_connection = connection_times.get(client_ip, 0)
-    if now_ms - last_connection < RATE_LIMIT_MS:
+    last = connection_times.get(client_ip, 0)
+    if now_ms - last < RATE_LIMIT_MS:
         try:
-            client_socket.close()
-        except Exception:
+            ssl_sock.close()
+        except:
             pass
         return
 
     connection_times[client_ip] = now_ms
 
-    clients.append(client_socket)
-    print(f"Client connection established: {client_ip} (TLS)")
+    clients.append(ssl_sock)
+    print(f"Client connection established: {client_ip} (TLS OK)")
 
     try:
         buffer = ""
         while True:
-            data = client_socket.recv(4096)
+            data = ssl_sock.recv(4096)
             if not data:
                 break
+            chunk = data.decode("utf-8", errors="ignore")
+            buffer += chunk
 
-            received_chunk = data.decode('utf-8', errors='ignore')
-            buffer += received_chunk
-            message_to_process = buffer.strip()
+            msg = buffer.strip()
             buffer = ""
-            if message_to_process:
-                process_chat_message(client_socket, message_to_process)
-    except ConnectionResetError:
-        print("Connection error from someplace: Connection reset or forced disconnect.")
-    except socket.timeout:
-        print("Connection error from something: Timeout.")
-    except Exception as err:
-        print(f"Connection error: {err}", file=sys.stderr)
-    finally:
-        remove_client(client_socket)
 
+            if msg:
+                process_chat_message(ssl_sock, msg)
+
+    except Exception as e:
+        # Treat "operation did not complete" as a normal disconnect
+        if not "operation did not complete" in str(e):
+            print(f"SSL socket error: {e}", file=sys.stderr)
+    finally:
+        remove_client(ssl_sock)
+
+def tls_wrap_nonblocking(context, raw_sock, addr, timeout=5.0):
+    """
+    Wraps a TCP socket in TLS without freezing the server.
+    Returns a fully handshaken ssl_sock or None on failure.
+    """
+    raw_sock.settimeout(5)
+    first = raw_sock.recv(1, socket.MSG_PEEK)
+    if not first:
+        print(f"[{addr}] No data from client → rejected")
+        raw_sock.close()
+        return None
+
+    try:
+        ssl_sock = context.wrap_socket(
+            raw_sock,
+            server_side=True,
+            do_handshake_on_connect=False
+        )
+    except Exception as e:
+        print(f"[{addr}] wrap_socket failed:", e)
+        raw_sock.close()
+        return None
+
+    ssl_sock.setblocking(False)
+
+    start = time.time()
+    while True:
+        try:
+            ssl_sock.do_handshake()
+            return ssl_sock
+
+        except ssl.SSLWantReadError:
+            if time.time() - start > timeout:
+                print(f"[{addr}] Handshake timeout → dropped")
+                ssl_sock.close()
+                return None
+            time.sleep(0.05)
+            continue
+
+        except ssl.SSLError as e:
+            print(f"[{addr}] Handshake error:", e)
+            ssl_sock.close()
+            return None
 
 def start_server():
-    # Create a TLS context for the server
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
-    # Load the certificate and private key
     try:
         context.load_cert_chain(certfile=CERTFILE, keyfile=KEYFILE)
     except Exception as e:
-        print(f"Failed to load cert/key: {e}", file=sys.stderr)
+        print("Failed to load cert/key:", e)
         sys.exit(1)
 
-    # Create raw TCP socket and bind
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-        server.bind((HOST, PORT))
-        server.listen(5)
-    except Exception as e:
-        print(f"Could not bind to port {PORT}: {e}", file=sys.stderr)
-        sys.exit(1)
+    server.bind((HOST, PORT))
+    server.listen(5)
 
-    print(f"aurorachat server v0.0.3 running on port {PORT} (TLS).")
+    print(f"aurorachat server running on port {PORT} (TLS, async handshake)")
 
     while True:
         try:
-            raw_client, client_address = server.accept()
+            raw_client, addr = server.accept()
 
-            # Wrap the raw client socket into a TLS socket
-            try:
-                tls_client = context.wrap_socket(raw_client, server_side=True)
-            except ssl.SSLError as ssl_err:
-                print(f"SSL handshake failed with {client_address}: {ssl_err}", file=sys.stderr)
-                try:
-                    raw_client.close()
-                except Exception:
-                    pass
-                continue
+            ssl_client = tls_wrap_nonblocking(context, raw_client, addr)
 
-            client_handler = threading.Thread(target=handle_client, args=(tls_client, client_address))
-            client_handler.daemon = True
-            client_handler.start()
+            if not ssl_client:
+                continue  # handshake failed or not TLS
+
+            t = threading.Thread(target=handle_client, args=(ssl_client, addr))
+            t.daemon = True
+            t.start()
 
         except KeyboardInterrupt:
-            print("\nShutting down server...")
-            server.close()
-            for client in list(clients):
-                try:
-                    client.close()
-                except Exception:
-                    pass
-            sys.exit(0)
-        except Exception as e:
-            print(f"Server error: {e}", file=sys.stderr)
+            print("\nShutting down...")
+            break
 
+        except Exception as e:
+            print("Server error:", e)
+
+    server.close()
+    for c in list(clients):
+        try: c.close()
+        except: pass
 
 if __name__ == "__main__":
     start_server()
