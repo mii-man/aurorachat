@@ -11,26 +11,25 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <malloc.h>
+#include <opusfile.h> // apparently this didnt mess with the compilation it was just a warning for me -.-
+
+#include <3ds/applets/swkbd.h>
 
 #include <citro2d.h>
-#include <3ds/applets/swkbd.h>
-#include <3ds/services/sslc.h> // ensure header available
 
-// --- Config ---
-#define SERVER_IP   "127.0.0.1"
-#define SERVER_PORT 8961
 
-// --- Globals ---
-int sockfd = -1;
-sslcContext tlsCtx;
+
+
 
 C2D_TextBuf sbuffer;
 C2D_Text stext;
+
 C2D_TextBuf chatbuffer;
 C2D_Text chat;
 
 char chatstring[6000] = "-chat-";
 char usernameholder[64];
+
 float chatscroll = 20;
 
 int scene = 1;
@@ -41,59 +40,16 @@ int theme = 1;
 
 bool switched = false;
 
-// Utility: print Result in hex
-static void printRes(const char *prefix, Result r) {
-    printf("%s: 0x%08lx\n", prefix, (unsigned long)r);
-}
 
-// TLS helpers
-Result tls_init_service() {
-    return sslcInit(0);
-}
 
-void tls_exit_service(void) {
-    sslcExit();
-}
 
-Result tls_connect_socket(int sock, sslcContext *ctx) {
-    Result ret;
-    int internal_retval = 0;
-    u32 out = 0;
 
-    // Create context: Disable verification for development (SSLCOPT_DisableVerify)
-    ret = sslcCreateContext(ctx, sock, SSLCOPT_DisableVerify, 0);
-    if (R_FAILED(ret)) {
-        printRes("sslcCreateContext failed", ret);
-        return ret;
-    }
 
-    // Start TLS handshake: note sslcStartConnection takes 3 args
-    ret = sslcStartConnection(ctx, &internal_retval, &out);
-    if (R_FAILED(ret)) {
-        printRes("sslcStartConnection failed", ret);
-        return ret;
-    }
 
-    // At this point TLS handshake succeeded (or has internal retval; we assume success)
-    return 0;
-}
 
-Result tls_send(sslcContext *ctx, const char *buf, size_t len) {
-    // sslcWrite returns Result
-    return sslcWrite(ctx, buf, len);
-}
 
-ssize_t tls_recv_text(sslcContext *ctx, char *buf, size_t bufsize) {
-    // sslcRead returns Result; it writes up to bufsize bytes.
-    // For text chat we assume data is textual and null-terminate after read.
-    Result ret = sslcRead(ctx, buf, bufsize - 1, false);
-    if (R_FAILED(ret)) return -1;
 
-    // Many sslc examples return data as a null-terminated string; if not, we fallback to strlen.
-    buf[bufsize - 1] = '\0';
-    size_t len = strlen(buf);
-    return (ssize_t)len;
-}
+// function time
 
 void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u32 color, bool wordwrap) {
     C2D_TextBufClear(sbuffer);
@@ -102,10 +58,30 @@ void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u
 
     if (!wordwrap) {
         C2D_DrawText(&stext, C2D_WithColor, x, y, z, scaleX, scaleY, color);
-    } else {
+    }
+    if (wordwrap) {
         C2D_DrawText(&stext, C2D_WithColor | C2D_WordWrap, x, y, z, scaleX, scaleY, color, 290.0f);
     }
 }
+
+
+
+
+
+
+
+
+// intentional
+// haha
+
+
+
+
+
+
+
+
+
 
 int main(int argc, char **argv) {
     romfsInit();
@@ -117,128 +93,103 @@ int main(int argc, char **argv) {
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 
     sbuffer = C2D_TextBufNew(4096);
-    chatbuffer = C2D_TextBufNew(8192);
+    chatbuffer = C2D_TextBufNew(4096);
+
+
     C2D_TextParse(&chat, chatbuffer, chatstring);
     C2D_TextOptimize(&chat);
 
-    // --- Networking init ---
+
     u32 *soc_buffer = memalign(0x1000, 0x100000);
     if (!soc_buffer) {
-        printf("soc memalign failed\n");
-        return 1;
+        // placeholder
     }
-
     if (socInit(soc_buffer, 0x100000) != 0) {
-        printf("socInit failed\n");
-        return 1;
+        // placeholder
     }
 
-    // Initialize SSL service (pass process handle)
-    Result r = tls_init_service();
-    if (R_FAILED(r)) {
-        printRes("sslcInit failed", r);
-        socExit();
-        return 1;
-    }
-
-    // Create and connect TCP socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        printf("socket() failed\n");
-        tls_exit_service();
-        socExit();
-        return 1;
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        // placeholder
     }
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(SERVER_PORT);
-    server.sin_addr.s_addr = inet_addr(SERVER_IP);
+    server.sin_port = htons(8961); // new niche meme?
+    server.sin_addr.s_addr = inet_addr("104.236.25.60"); // one below 61 (new niche meme)
 
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) != 0) {
-        printf("TCP connect failed\n");
-        closesocket(sockfd);
-        tls_exit_service();
-        socExit();
-        return 1;
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
+        // placeholder
     }
-
-    // Wrap the TCP socket with SSL/TLS
-    r = tls_connect_socket(sockfd, &tlsCtx);
-    if (R_FAILED(r)) {
-        printRes("tls_connect_socket failed", r);
-        closesocket(sockfd);
-        tls_exit_service();
-        socExit();
-        return 1;
-    }
-
-    printf("Connected to TLS server %s:%d\n", SERVER_IP, SERVER_PORT);
 
     char username[21]; //swkbd registers name, but client doesnt, now it does
     // okay
     // was i the one who made that comment???
 
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0; // NOT 10ms
+
     u32 textcolor;
     u32 themecolor;
 
-    // --- Main loop (UI + chat) ---
-    char inbuf[512];
+    char buffer[512];
     while (aptMainLoop()) {
         gspWaitForVBlank();
         hidScanInput();
 
         if (hidKeysDown() & KEY_A) {
+            char message[64];
+            char input[64];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
-            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-            SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username));
-            if (button == SWKBD_BUTTON_CONFIRM) {
-                snprintf(usernameholder, sizeof(usernameholder), "Username: %s", username);
-            }
+
+            SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
         }
 
         if (hidKeysDown() & KEY_B) {
-            char message[256];
-            char sendbuf[512];
+            char message[80];
+            char msg[128];
 
+            char input[80];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 128);
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 80);
             swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+
             SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
             if (button == SWKBD_BUTTON_CONFIRM) {
-                snprintf(sendbuf, sizeof(sendbuf), "<%s>: %s", username[0] ? username : "guest", message);
-                Result mr = tls_send(&tlsCtx, sendbuf, strlen(sendbuf));
-                if (R_FAILED(mr)) {
-                    printRes("sslcWrite failed", mr);
-                }
+                sprintf(msg, "<%s>: %s", username, message);
+                send(sock, msg, strlen(msg), 0);
             }
         }
 
-        // Non-blocking poll for incoming TLS data using select on the raw socket
         fd_set readfds;
-        struct timeval tv;
+        struct timeval timeout;
+
         FD_ZERO(&readfds);
-        FD_SET(sockfd, &readfds);
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
+        FD_SET(sock, &readfds);
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0; // gives more FPS, aka yummy
 
-        if (select(sockfd + 1, &readfds, NULL, NULL, &tv) > 0) {
-            // Data likely available; read via sslcRead (decrypted)
-            memset(inbuf, 0, sizeof(inbuf));
-            ssize_t got = tls_recv_text(&tlsCtx, inbuf, sizeof(inbuf));
-            if (got > 0) {
-                char tmp[6000];
-                snprintf(tmp, sizeof(tmp), "%s\n%s", chatstring, inbuf);
-                strncpy(chatstring, tmp, sizeof(chatstring));
-                chatscroll -= 15;
+        if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
+            ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
+            if (len > 0) {
 
-                const char *parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
+                
+                buffer[len] = '\0';
+
+                char temp[6000];
+                snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
+                strncpy(chatstring, temp, sizeof(chatstring));
+                chatscroll = chatscroll - 15; // testing with this
+
+                const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
                 if (parseResult != NULL && *parseResult != '\0') {
-                    chatbuffer = C2D_TextBufResize(chatbuffer, 16384);
+                    chatbuffer = C2D_TextBufResize(chatbuffer, 8192);
                     if (chatbuffer) {
                         C2D_TextBufClear(chatbuffer);
                         C2D_TextParse(&chat, chatbuffer, chatstring);
@@ -247,6 +198,16 @@ int main(int argc, char **argv) {
                 C2D_TextOptimize(&chat);
             }
         }
+
+
+        if (strlen(chatstring) > 3500) {
+            strcpy(chatstring, "-chat cleared!-\n");
+            C2D_TextBufClear(chatbuffer);
+            C2D_TextParse(&chat, chatbuffer, chatstring);
+            C2D_TextOptimize(&chat);
+            chatscroll = 20;
+        }
+
 
         if (hidKeysDown() & KEY_START) break;
 
@@ -287,7 +248,7 @@ int main(int argc, char **argv) {
 
         switched = false;
 
-        // Rendering
+
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(top, themecolor);
         C2D_SceneBegin(top);
@@ -374,15 +335,24 @@ int main(int argc, char **argv) {
         
         C2D_SceneBegin(bottom);
 
-        DrawText(chatstring, 0.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
+        C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 0.0f, chatscroll, 0, 0.5, 0.5, textcolor, 290.0f);
+
+
+
         C3D_FrameEnd(0);
+
+
+        // svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
+        // audio is gone rn
+        // will bring it back soon
+
     }
 
 
 
-
-    closesocket(sockfd);
-    tls_exit_service();
+    
+    closesocket(sock);
+    ndspExit();
     socExit();
     gfxExit();
     return 0;
