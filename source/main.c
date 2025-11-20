@@ -9,12 +9,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <malloc.h>
+#include <errno.h>
 
 #include <citro2d.h>
 #include <3ds/applets/swkbd.h>
-#include <3ds/services/sslc.h> // ensure header available
+
+#include "mbedtls/platform.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/net_sockets.h"
 
 // --- Config ---
 #define SERVER_IP   "127.0.0.1"
@@ -22,7 +31,13 @@
 
 // --- Globals ---
 int sockfd = -1;
-sslcContext tlsCtx;
+
+// mbedTLS contexts
+static mbedtls_ssl_context ssl;
+static mbedtls_ssl_config conf;
+static mbedtls_entropy_context entropy;
+static mbedtls_ctr_drbg_context ctr_drbg;
+static bool tls_initialized = false;
 
 C2D_TextBuf sbuffer;
 C2D_Text stext;
@@ -41,59 +56,7 @@ int theme = 1;
 
 bool switched = false;
 
-// Utility: print Result in hex
-static void printRes(const char *prefix, Result r) {
-    printf("%s: 0x%08lx\n", prefix, (unsigned long)r);
-}
-
-// TLS helpers
-Result tls_init_service() {
-    return sslcInit(0);
-}
-
-void tls_exit_service(void) {
-    sslcExit();
-}
-
-Result tls_connect_socket(int sock, sslcContext *ctx) {
-    Result ret;
-    int internal_retval = 0;
-    u32 out = 0;
-
-    // Create context: Disable verification for development (SSLCOPT_DisableVerify)
-    ret = sslcCreateContext(ctx, sock, SSLCOPT_DisableVerify, 0);
-    if (R_FAILED(ret)) {
-        printRes("sslcCreateContext failed", ret);
-        return ret;
-    }
-
-    // Start TLS handshake: note sslcStartConnection takes 3 args
-    ret = sslcStartConnection(ctx, &internal_retval, &out);
-    if (R_FAILED(ret)) {
-        printRes("sslcStartConnection failed", ret);
-        return ret;
-    }
-
-    // At this point TLS handshake succeeded (or has internal retval; we assume success)
-    return 0;
-}
-
-Result tls_send(sslcContext *ctx, const char *buf, size_t len) {
-    // sslcWrite returns Result
-    return sslcWrite(ctx, buf, len);
-}
-
-ssize_t tls_recv_text(sslcContext *ctx, char *buf, size_t bufsize) {
-    // sslcRead returns Result; it writes up to bufsize bytes.
-    // For text chat we assume data is textual and null-terminate after read.
-    Result ret = sslcRead(ctx, buf, bufsize - 1, false);
-    if (R_FAILED(ret)) return -1;
-
-    // Many sslc examples return data as a null-terminated string; if not, we fallback to strlen.
-    buf[bufsize - 1] = '\0';
-    size_t len = strlen(buf);
-    return (ssize_t)len;
-}
+// function time
 
 void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u32 color, bool wordwrap) {
     C2D_TextBufClear(sbuffer);
@@ -105,6 +68,155 @@ void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u
     } else {
         C2D_DrawText(&stext, C2D_WithColor | C2D_WordWrap, x, y, z, scaleX, scaleY, color, 290.0f);
     }
+}
+
+// Print mbedTLS errors in a compact form
+static void print_mbed_error(const char *prefix, int ret) {
+    char errbuf[200];
+    mbedtls_strerror(ret, errbuf, sizeof(errbuf));
+    printf("%s: -0x%04x (%s)\n", prefix, -ret, errbuf);
+}
+
+// ---------- mbedTLS socket wrappers ----------
+// mbedTLS expects send/recv callbacks with this prototype:
+// int (*f_send)(void *ctx, const unsigned char *buf, size_t len)
+// int (*f_recv)(void *ctx, unsigned char *buf, size_t len)
+
+static int tls_socket_send(void *ctx, const unsigned char *buf, size_t len) {
+    int fd = *(int *)ctx;
+    ssize_t ret = send(fd, buf, len, 0);
+    if (ret >= 0) return (int)ret;
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK) return MBEDTLS_ERR_SSL_WANT_WRITE;
+    if (errno == EINTR) return MBEDTLS_ERR_SSL_WANT_WRITE;
+    // Map other socket errors to a generic mbedTLS network error
+    return MBEDTLS_ERR_NET_SEND_FAILED;
+}
+
+static int tls_socket_recv(void *ctx, unsigned char *buf, size_t len) {
+    int fd = *(int *)ctx;
+    ssize_t ret = recv(fd, buf, len, 0);
+    if (ret > 0) return (int)ret;
+    if (ret == 0) return MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY; // connection closed
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK) return MBEDTLS_ERR_SSL_WANT_READ;
+    if (errno == EINTR) return MBEDTLS_ERR_SSL_WANT_READ;
+    return MBEDTLS_ERR_NET_RECV_FAILED;
+}
+
+// Initialize mbedTLS contexts and configure a client for TLS 1.3
+static int tls_init_mbed(int fd) {
+    int ret;
+    const char *pers = "aurorachat_3ds";
+
+    mbedtls_ssl_init(&ssl);
+    mbedtls_ssl_config_init(&conf);
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                    (const unsigned char *)pers, strlen(pers))) != 0) {
+        print_mbed_error("mbedtls_ctr_drbg_seed failed", ret);
+        return ret;
+    }
+
+    // Defaults: client, stream transport
+    if ((ret = mbedtls_ssl_config_defaults(&conf,
+                                           MBEDTLS_SSL_IS_CLIENT,
+                                           MBEDTLS_SSL_TRANSPORT_STREAM,
+                                           MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+        print_mbed_error("mbedtls_ssl_config_defaults failed", ret);
+        return ret;
+    }
+
+    // For development/testing: do not verify server cert. Change to MBEDTLS_SSL_VERIFY_REQUIRED to enable.
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
+
+    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+
+    // Apply the config
+    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
+        print_mbed_error("mbedtls_ssl_setup failed", ret);
+        return ret;
+    }
+
+    // Set SNI / hostname for certificate validation (if you enable verify later)
+    mbedtls_ssl_set_hostname(&ssl, SERVER_IP); // can be host name if available
+
+    // Set BIO callbacks to use our socket
+    mbedtls_ssl_set_bio(&ssl, &fd, tls_socket_send, tls_socket_recv, NULL);
+
+    tls_initialized = true;
+    return 0;
+}
+
+static void tls_free_mbed(void) {
+    if (!tls_initialized) return;
+
+    mbedtls_ssl_close_notify(&ssl);
+    mbedtls_ssl_free(&ssl);
+    mbedtls_ssl_config_free(&conf);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+
+    tls_initialized = false;
+}
+
+// Wrapper to perform handshake (non-blocking-friendly)
+static int tls_perform_handshake(void) {
+    int ret;
+    while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
+        if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+            // Caller should poll the socket; for simplicity we return WANT_READ/WRITE so caller can select.
+            return ret;
+        }
+        print_mbed_error("mbedtls_ssl_handshake failed", ret);
+        return ret;
+    }
+    return 0; // success
+}
+
+// Send via mbedTLS
+static int tls_send_mbed(const char *buf, size_t len) {
+    if (!tls_initialized) return -1;
+    int ret;
+    size_t written = 0;
+
+    while (written < len) {
+        ret = mbedtls_ssl_write(&ssl, (const unsigned char *)buf + written, len - written);
+        if (ret >= 0) {
+            written += ret;
+            continue;
+        }
+        if (ret == MBEDTLS_ERR_SSL_WANT_WRITE || ret == MBEDTLS_ERR_SSL_WANT_READ) {
+            // Would block; caller may retry later.
+            return 0; // indicate "no error, but nothing sent yet" to keep original code style
+        }
+        print_mbed_error("mbedtls_ssl_write failed", ret);
+        return -1;
+    }
+    return (int)written;
+}
+
+// Receive text data (null-terminated), return bytes read or -1 on error
+static ssize_t tls_recv_text_mbed(char *buf, size_t bufsize) {
+    if (!tls_initialized) return -1;
+    int ret;
+    ret = mbedtls_ssl_read(&ssl, (unsigned char *)buf, bufsize - 1);
+    if (ret > 0) {
+        buf[ret] = '\0';
+        return (ssize_t)ret;
+    }
+    if (ret == 0) {
+        // Connection closed cleanly
+        return 0;
+    }
+    if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+        return -2; // indicate "try again"
+    }
+    // Other error
+    print_mbed_error("mbedtls_ssl_read failed", ret);
+    return -1;
 }
 
 int main(int argc, char **argv) {
@@ -133,22 +245,17 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Initialize SSL service (pass process handle)
-    Result r = tls_init_service();
-    if (R_FAILED(r)) {
-        printRes("sslcInit failed", r);
-        socExit();
-        return 1;
-    }
-
     // Create and connect TCP socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         printf("socket() failed\n");
-        tls_exit_service();
         socExit();
         return 1;
     }
+
+    // Make socket non-blocking to interop nicely with mbedTLS
+    uint32_t enable = 1;
+    ioctl(sockfd, FIONBIO, &enable);
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
@@ -156,22 +263,76 @@ int main(int argc, char **argv) {
     server.sin_port = htons(SERVER_PORT);
     server.sin_addr.s_addr = inet_addr(SERVER_IP);
 
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) != 0) {
-        printf("TCP connect failed\n");
+    // Attempt connect (non-blocking)
+    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0 && errno != EINPROGRESS) {
+        printf("TCP connect failed (errno=%d)\n", errno);
         closesocket(sockfd);
-        tls_exit_service();
         socExit();
         return 1;
     }
 
-    // Wrap the TCP socket with SSL/TLS
-    r = tls_connect_socket(sockfd, &tlsCtx);
-    if (R_FAILED(r)) {
-        printRes("tls_connect_socket failed", r);
+    // Wait for connect to complete via select with timeout
+    fd_set wfds;
+    struct timeval tv;
+    FD_ZERO(&wfds);
+    FD_SET(sockfd, &wfds);
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+    if (select(sockfd + 1, NULL, &wfds, NULL, &tv) <= 0) {
+        printf("TCP connect/select timeout or error\n");
         closesocket(sockfd);
-        tls_exit_service();
         socExit();
         return 1;
+    }
+
+    // Check for socket error
+    int so_error = 0;
+    socklen_t len = sizeof(so_error);
+    getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &len);
+    if (so_error != 0) {
+        printf("connect error: %d\n", so_error);
+        closesocket(sockfd);
+        socExit();
+        return 1;
+    }
+
+    // Initialize mbedTLS on this connected socket
+    int ret = tls_init_mbed(sockfd);
+    if (ret != 0) {
+        printf("tls_init_mbed failed\n");
+        closesocket(sockfd);
+        tls_free_mbed();
+        socExit();
+        return 1;
+    }
+
+    // Perform handshake — this may return WANT_READ/WANT_WRITE initially because socket is non-blocking.
+    while (true) {
+        ret = tls_perform_handshake();
+        if (ret == 0) break;
+
+        if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
+            // wait until socket readable
+            fd_set rf;
+            FD_ZERO(&rf);
+            FD_SET(sockfd, &rf);
+            tv.tv_sec = 5; tv.tv_usec = 0;
+            select(sockfd + 1, &rf, NULL, NULL, &tv);
+            continue;
+        } else if (ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+            fd_set wf;
+            FD_ZERO(&wf);
+            FD_SET(sockfd, &wf);
+            tv.tv_sec = 5; tv.tv_usec = 0;
+            select(sockfd + 1, NULL, &wf, NULL, &tv);
+            continue;
+        } else {
+            printf("Handshake failed\n");
+            closesocket(sockfd);
+            tls_free_mbed();
+            socExit();
+            return 1;
+        }
     }
 
     printf("Connected to TLS server %s:%d\n", SERVER_IP, SERVER_PORT);
@@ -211,25 +372,25 @@ int main(int argc, char **argv) {
             SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
             if (button == SWKBD_BUTTON_CONFIRM) {
                 snprintf(sendbuf, sizeof(sendbuf), "<%s>: %s", username[0] ? username : "guest", message);
-                Result mr = tls_send(&tlsCtx, sendbuf, strlen(sendbuf));
-                if (R_FAILED(mr)) {
-                    printRes("sslcWrite failed", mr);
+                int sret = tls_send_mbed(sendbuf, strlen(sendbuf));
+                if (sret < 0) {
+                    printf("tls_send_mbed failed\n");
                 }
             }
         }
 
         // Non-blocking poll for incoming TLS data using select on the raw socket
         fd_set readfds;
-        struct timeval tv;
+        struct timeval timeout;
         FD_ZERO(&readfds);
         FD_SET(sockfd, &readfds);
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
 
-        if (select(sockfd + 1, &readfds, NULL, NULL, &tv) > 0) {
-            // Data likely available; read via sslcRead (decrypted)
+        if (select(sockfd + 1, &readfds, NULL, NULL, &timeout) > 0) {
+            // Data likely available; read via mbedTLS
             memset(inbuf, 0, sizeof(inbuf));
-            ssize_t got = tls_recv_text(&tlsCtx, inbuf, sizeof(inbuf));
+            ssize_t got = tls_recv_text_mbed(inbuf, sizeof(inbuf));
             if (got > 0) {
                 char tmp[6000];
                 snprintf(tmp, sizeof(tmp), "%s\n%s", chatstring, inbuf);
@@ -245,6 +406,16 @@ int main(int argc, char **argv) {
                     }
                 }
                 C2D_TextOptimize(&chat);
+            } else if (got == 0) {
+                // connection closed by peer
+                printf("TLS connection closed by peer\n");
+                break;
+            } else if (got == -2) {
+                // WANT_READ/WANT_WRITE -> nothing to do right now
+            } else {
+                // error
+                printf("tls_recv_text_mbed error\n");
+                break;
             }
         }
 
@@ -292,7 +463,6 @@ int main(int argc, char **argv) {
         C2D_TargetClear(top, themecolor);
         C2D_SceneBegin(top);
 
-
         char *themename;
         if (theme == 1) {
             themename = "Aurora White";
@@ -334,55 +504,29 @@ int main(int argc, char **argv) {
             themecolor = C2D_Color32(6, 0, 57, 255);
             textcolor = C2D_Color32(255, 255, 255, 255);
         }
-        
-
 
         if (scene == 1) {
             DrawText("aurorachat", 260.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
-            
-
             sprintf(usernameholder, "%s %s", "Username:", username);
-
             DrawText(usernameholder, 0.0f, 200.0f, 0, 1.0f, 1.0f, textcolor, false);
-
-
-
-            
             DrawText("v0.0.3.2", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
-            
-            
-            
-
-
-
-
             DrawText("A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme", 0.0f, 0.0f, 0, 0.6f, 0.6f, textcolor, false);
-            
-            
-
-
             DrawText(themename, 170.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
-
         }
-
 
         if (scene == 2) {
             DrawText("(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
         }
 
         C2D_TargetClear(bottom, themecolor);
-        
         C2D_SceneBegin(bottom);
-
         DrawText(chatstring, 0.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
         C3D_FrameEnd(0);
     }
 
-
-
-
+    // Cleanup
+    tls_free_mbed();
     closesocket(sockfd);
-    tls_exit_service();
     socExit();
     gfxExit();
     return 0;
