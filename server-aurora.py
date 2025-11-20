@@ -104,7 +104,7 @@ def handle_client(ssl_sock, addr):
     connection_times[client_ip] = now_ms
 
     clients.append(ssl_sock)
-    print(f"Client connection established: {client_ip} (TLS OK)")
+    print(f"Client connection established.")
 
     try:
         buffer = ""
@@ -136,7 +136,7 @@ def tls_wrap_nonblocking(context, raw_sock, addr, timeout=5.0):
     raw_sock.settimeout(5)
     first = raw_sock.recv(1, socket.MSG_PEEK)
     if not first:
-        print(f"[{addr}] No data from client → rejected")
+        print(f"No data from client → rejected")
         raw_sock.close()
         return None
 
@@ -147,7 +147,7 @@ def tls_wrap_nonblocking(context, raw_sock, addr, timeout=5.0):
             do_handshake_on_connect=False
         )
     except Exception as e:
-        print(f"[{addr}] wrap_socket failed:", e)
+        print(f"wrap_socket failed:", e)
         raw_sock.close()
         return None
 
@@ -161,14 +161,14 @@ def tls_wrap_nonblocking(context, raw_sock, addr, timeout=5.0):
 
         except ssl.SSLWantReadError:
             if time.time() - start > timeout:
-                print(f"[{addr}] Handshake timeout → dropped")
+                print(f"Handshake timeout → dropped")
                 ssl_sock.close()
                 return None
             time.sleep(0.05)
             continue
 
         except ssl.SSLError as e:
-            print(f"[{addr}] Handshake error:", e)
+            print(f"Handshake error:", e)
             ssl_sock.close()
             return None
 
@@ -186,7 +186,7 @@ def start_server():
     server.bind((HOST, PORT))
     server.listen(5)
 
-    print(f"aurorachat server running on port {PORT} (TLS, async handshake)")
+    print(f"aurorachat server running on port {PORT}")
 
     while True:
         try:
