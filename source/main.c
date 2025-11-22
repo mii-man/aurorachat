@@ -17,6 +17,8 @@
 
 #include <citro2d.h>
 
+u32 __stacksize__ = 0x100000; // 1 MB
+
 
 
 
