@@ -15,7 +15,7 @@ Current ETA: NONE (On hold)
 
 <h2>Development Log</h2>
 <ul>
-<li>v0.0.3.9 (unreleased, indev, on hold) - Added awesome encryption and console-specific IDs.</li>
+<li>v0.0.3.9 (unreleased, indev, slowly progressing) - Added awesome encryption and console-specific IDs.</li>
 <li>v0.0.3.4 - Security stuff and stack boostage.</li>
 <li>v0.0.3.3 - Fixed a crash relating to duplicate theme text.</li>
 <li>v0.0.3.2 - Added 3 more themes and fixed up the theme manager</li>
