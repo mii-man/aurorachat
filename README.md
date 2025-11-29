@@ -1,8 +1,6 @@
 <h1>aurorachat</h1>
 A chatting application for the Nintendo 3DS and 2DS line of systems
 
-EDIT: As of 11/29/25 (mm/dd/yy) the servers for aurorachat have gone down, we suspect this might be due to the fact my VPS has been getting DDoSed recently, please wait while we attempt to resolve the issue.
-
 
 [Join our Discord!](https://discord.gg/dCSgz7KERv)
 
