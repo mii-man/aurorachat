@@ -7,6 +7,9 @@ A chatting application for the Nintendo 3DS and 2DS line of systems
 
 Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) by @ItsFuntum
 
+# Server outages
+There are server outages very often, the reason why is because we are constantly under attack by ddosers, thankfully fail2ban and other systems seem to be majorly assisting, but there are points of downtime.
+
 
 # Security
 We are currently working on end-to-end encryption (actually I don't know that you can call it that or not) that will prevent MITM (Man In The Middle) attacks and protect our users.
