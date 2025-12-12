@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>auroraccount Sign Up</title>
+  <!-- fonts!!!!! very important for good looking website!!! -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+<!-- i put in my fonts after the css file. i'm an idiot. -->
+ <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+ 
+
+  <div id="signup-container">
+  <h2>Sign Up</h2><br><br>
+  <form id="signup-form">
+
+   <label for="signup-username">Username:</label>
+   <input type="text" id="signup-username" minlength="3" maxlength="21" required><br><br>
+   <small>Username must have at least 3 characters, and no more than 21 characters.</small><br><br>
+   
+   <label for="signup-email">Email:</label>
+   <input type="email" id="signup-email" required><br><br>
+
+   <label for="signup-password">Password:</label>
+   <input type="password" id="signup-password" minlength="8" required><br><br>
+   <small>Password must have at least 8 characters.</small><br><br>
+
+   <div id="error-box"></div><br>
+   <button type="submit">Sign Up</button><br><br>
+   <div id="sign-in-hyperlink">
+   <a href="https://mii-man.github.io/aurorachatweb/auroraccount/sign-in">Sign In</a><br><br>
+  </div>
+  </form>
+</div>
+
+
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyByg74FpFpfcY9FiuHW6yRXFh0C8uAF7tk",
+    authDomain: "auroraccountdata.firebaseapp.com",
+    projectId: "auroraccountdata",
+    storageBucket: "auroraccountdata.firebasestorage.app",
+    messagingSenderId: "92117793421",
+    appId: "1:92117793421:web:1866c2e4074f36b5c2c0c4",
+    measurementId: "G-7PL1WG23PB"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+document.getElementById("signup-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const username = document.getElementById("signup-username").value.trim();
+    const email = document.getElementById("signup-email").value.trim();
+    const password = document.getElementById("signup-password").value;
+
+    const errorBox = document.getElementById("error-box");
+
+    // --- Username validation ---
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,21}$/;
+    if (!usernameRegex.test(username)) {
+        errorBox.style.color = "red";
+        errorBox.textContent = "Username must be 3–21 characters and contain only letters, numbers, underscores, or dashes.";
+        return;
+    }
+
+    try {
+        // Check if username already exists
+        const existing = await getDoc(doc(db, "usernames", username));
+        if (existing.exists()) {
+            errorBox.style.color = "red";
+            errorBox.textContent = "That username is already taken.";
+            return;
+        }
+
+        // Create Firebase Auth user
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Set display name
+        await updateProfile(user, { displayName: username });
+
+        // Write user metadata
+        await setDoc(doc(db, "users", user.uid), {
+            username: username,
+            email: email
+        });
+
+        // Write username lookup document
+        await setDoc(doc(db, "usernames", username), {
+            email: email
+        });
+
+        // Success message + redirect
+        errorBox.style.color = "green";
+        errorBox.textContent = "Account created! Redirecting...";
+        setTimeout(() => {
+            window.location.href = "/aurorachatweb/auroraccount/sign-in";
+        }, 1500);
+
+    } catch (error) {
+        errorBox.style.color = "red";
+        switch (error.code) {
+            case "auth/email-already-in-use":
+                errorBox.textContent = "That email is already registered.";
+                break;
+            case "auth/invalid-email":
+                errorBox.textContent = "Please enter a valid email address.";
+                break;
+            case "auth/weak-password":
+                errorBox.textContent = "Password must be at least 8 characters.";
+                break;
+            default:
+                errorBox.textContent = "Signup failed: " + error.message;
+        }
+    }
+});
+</script>
+
+
+
+</body>
+</html>
