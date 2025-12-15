@@ -20,7 +20,8 @@ CERTFILE = "cert.pem"
 KEYFILE = "key.pem"
 
 # --- Global State ---
-clients = {}               # list of SSLSocket objects
+clients = []               # list of SSLSocket objects
+connections_per_ip = {}    # dict: ip -> set of sockets
 rate_limit = {}            # maps SSLSocket -> last_msg_ts_ms
 connection_times = {}      # maps (ip, port) -> last_conn_ts_ms
 clients_lock = threading.Lock()
@@ -101,17 +102,13 @@ def remove_client(client_socket):
     """
     # Remove from clients list
     with clients_lock:
-        try:
-            if client_socket in clients:
-                clients.remove(client_socket)
-        except ValueError:
-            pass
-        # Remove rate_limit entry if present
-        try:
-            if client_socket in rate_limit:
-                del rate_limit[client_socket]
-        except Exception:
-            pass
+        if client_socket in clients:
+            clients.remove(client_socket)
+        for ip, sock_set in list(connections_per_ip.items()):
+            if client_socket in sock_set:
+                sock_set.remove(client_socket)
+            if not sock_set:
+                del connections_per_ip[ip]
 
     # Attempt a polite TLS shutdown to send close_notify.
     try:
@@ -180,24 +177,21 @@ def handle_client(ssl_sock, addr):
     connection_times[conn_key] = now_ms
 
     with clients_lock:
-        ip_clients = clients(client_ip, set())
-
+        ip_clients = connections_per_ip.get(client_ip, set())
         if len(ip_clients) >= MAX_CONNECTIONS_PER_IP:
             print(f"Rejecting new connection from {client_ip} (limit reached)")
             try:
                 ssl_sock.sendall(b"Too many connections from your IP\n")
             except Exception:
                 pass
-            try:
-                ssl_sock.close()
-            except Exception:
-                pass
+            ssl_sock.close()
             return
 
-        # accept connection
-        clients.append(ssl_sock)
+        # Add this client
         ip_clients.add(ssl_sock)
-        print(f"Client {client_ip} connected. Total clients: {len(clients)}")
+        connections_per_ip[client_ip] = ip_clients
+        clients.append(ssl_sock)
+        print(f"Client connected. Total clients: {len(clients)}")
 
     buffer = ""
     try:
@@ -247,7 +241,6 @@ def handle_client(ssl_sock, addr):
 
             except (ssl.SSLEOFError, ConnectionResetError, OSError) as e:
                 # The client disconnected or connection was reset
-                print("Client disconnected / reset:", e)
                 break
 
             except Exception as e:

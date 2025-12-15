@@ -120,7 +120,7 @@ bool connect_to_server(mbedtls_net_context *server_fd, mbedtls_ssl_context *ssl,
         MBEDTLS_SSL_TRANSPORT_STREAM,
         MBEDTLS_SSL_PRESET_DEFAULT);
 
-    mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+    mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_NONE); // don't verify server certificate
     mbedtls_ssl_conf_rng(conf, mbedtls_ctr_drbg_random, ctr_drbg);
     mbedtls_ssl_conf_ca_chain(conf, cacert, NULL);
 
@@ -175,6 +175,8 @@ int main(int argc, char **argv) {
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_x509_crt cacert;
+    mbedtls_x509_crt_parse_file(&cacert, "romfs:/cert.pem");
+    
     bool connected = connect_to_server(&server_fd, &ssl, &conf, &ctr_drbg, &entropy, &cacert, chatstring);
 
     char username[21];
@@ -221,12 +223,11 @@ int main(int argc, char **argv) {
 
             if (swkbdInputText(&swkbd, message, sizeof(message)) == SWKBD_BUTTON_CONFIRM) {
                 snprintf(msg, sizeof(msg), "<%s>: %s", username, message);
-                int ret = mbedtls_ssl_write(&ssl, (unsigned char*)msg, strlen(msg));
-                if (ret <= 0) {
-                    connected = false;
-                    mbedtls_ssl_close_notify(&ssl);
-                    mbedtls_net_free(&server_fd);
-                    append_chat_message("-Disconnected-");
+                int ret;
+                while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
+                    char err_buf[100];
+                    mbedtls_strerror(ret, err_buf, sizeof(err_buf));
+                    append_chat_message(err_buf); // print to chat for debug
                 }
             }
         }

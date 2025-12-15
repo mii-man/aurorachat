@@ -63,3 +63,4 @@ dkms.conf
 # SSL files
 cert.pem
 key.pem
+romfs/cert.pemZone.Identifier
