@@ -1,10 +1,14 @@
 <h1>aurorachat</h1>
 A chatting application for the Nintendo 3DS and 2DS line of systems
 
-Discord server coming soon!
+
+[Join our Discord!](https://discord.gg/dCSgz7KERv)
 
 
 Also check out the [Wii U client](https://github.com/ItsFuntum/aurorachat-wiiu) by @ItsFuntum
+
+# Server outages
+There are server outages very often, the reason why is because we are constantly under attack by ddosers, thankfully fail2ban and other systems seem to be majorly assisting, but there are points of downtime.
 
 
 # Security
@@ -15,7 +19,8 @@ Current ETA: NONE (On hold)
 
 <h2>Development Log</h2>
 <ul>
-<li>v0.0.3.9 (unreleased, indev, on hold) - Added awesome encryption and console-specific IDs.</li>
+<li>v0.0.3.9 (unreleased, indev, slowly progressing) - Added awesome encryption and console-specific IDs.</li>
+<li>v0.0.3.4 - Security stuff and stack boostage.</li>
 <li>v0.0.3.3 - Fixed a crash relating to duplicate theme text.</li>
 <li>v0.0.3.2 - Added 3 more themes and fixed up the theme manager</li>
 <li>v0.0.3.1 - Added 2 more themes and fixed some issues with the code</li>

@@ -5,7 +5,7 @@ import time
 import sys
 from better_profanity import profanity
 
-# Initialize profanity filter
+# Initialize the profanity filter
 profanity.load_censor_words()
 
 # --- Configuration ---
@@ -27,11 +27,16 @@ clients_lock = threading.Lock()
 
 # --- Helper Functions ---
 
+
 def process_chat_message(client_socket, message):
+    """
+    Helper function to process a single message from a client.
+    """
     message_strip = message.strip()
     if not message_strip:
         return
 
+    # Termination Trigger Check
     if TERMINATION_TRIGGER in message_strip:
         try:
             client_socket.sendall(
@@ -48,9 +53,10 @@ def process_chat_message(client_socket, message):
                 f"Message too large! Max length is {MAX_MESSAGE_LENGTH} characters.\n".encode()
             )
         except Exception:
-            pass
+            pass 
         return
 
+    # Rate Limiting Check
     now = int(time.time() * 1000)
     with clients_lock:
         last_msg = rate_limit.get(client_socket, 0)
@@ -64,7 +70,8 @@ def process_chat_message(client_socket, message):
 
     censored_msg = profanity.censor(message_strip, '*')
     print(f"Message Processed: {repr(censored_msg)[1:-1]}")
-    broadcast(censored_msg + "\n")
+
+    broadcast(f"{censored_msg}\n")
 
 
 def broadcast(message):
@@ -312,6 +319,7 @@ def tls_wrap_nonblocking(context, raw_sock, addr, timeout=5.0):
                 pass
             return None
 
+# --- Main Server Logic ---
 
 def start_server():
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -364,7 +372,6 @@ def start_server():
                 remove_client(c)
             except Exception:
                 pass
-
 
 if __name__ == "__main__":
     start_server()

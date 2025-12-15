@@ -25,6 +25,8 @@
 #include "mbedtls/x509.h"
 #include "mbedtls/net_sockets.h"
 
+u32 __stacksize__ = 0x100000; // 1 MB
+
 // --- Config ---
 #define SERVER_IP   "127.0.0.1"
 #define SERVER_PORT 8961
@@ -41,11 +43,13 @@ static bool tls_initialized = false;
 
 C2D_TextBuf sbuffer;
 C2D_Text stext;
+
 C2D_TextBuf chatbuffer;
 C2D_Text chat;
 
 char chatstring[6000] = "-chat-";
 char usernameholder[64];
+
 float chatscroll = 20;
 
 int scene = 1;
@@ -65,7 +69,8 @@ void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u
 
     if (!wordwrap) {
         C2D_DrawText(&stext, C2D_WithColor, x, y, z, scaleX, scaleY, color);
-    } else {
+    }
+    if (wordwrap) {
         C2D_DrawText(&stext, C2D_WithColor | C2D_WordWrap, x, y, z, scaleX, scaleY, color, 290.0f);
     }
 }
@@ -229,20 +234,19 @@ int main(int argc, char **argv) {
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 
     sbuffer = C2D_TextBufNew(4096);
-    chatbuffer = C2D_TextBufNew(8192);
+    chatbuffer = C2D_TextBufNew(4096);
+
+
     C2D_TextParse(&chat, chatbuffer, chatstring);
     C2D_TextOptimize(&chat);
 
-    // --- Networking init ---
+
     u32 *soc_buffer = memalign(0x1000, 0x100000);
     if (!soc_buffer) {
-        printf("soc memalign failed\n");
-        return 1;
+        // placeholder
     }
-
     if (socInit(soc_buffer, 0x100000) != 0) {
-        printf("socInit failed\n");
-        return 1;
+        // placeholder
     }
 
     // Create and connect TCP socket
@@ -260,16 +264,8 @@ int main(int argc, char **argv) {
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(SERVER_PORT);
-    server.sin_addr.s_addr = inet_addr(SERVER_IP);
-
-    // Attempt connect (non-blocking)
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0 && errno != EINPROGRESS) {
-        printf("TCP connect failed (errno=%d)\n", errno);
-        closesocket(sockfd);
-        socExit();
-        return 1;
-    }
+    server.sin_port = htons(8961); // new niche meme?
+    server.sin_addr.s_addr = inet_addr("104.236.25.60"); // one below 61 (new niche meme)
 
     // Wait for connect to complete via select with timeout
     fd_set wfds;
@@ -278,33 +274,9 @@ int main(int argc, char **argv) {
     FD_SET(sockfd, &wfds);
     tv.tv_sec = 5;
     tv.tv_usec = 0;
-    if (select(sockfd + 1, NULL, &wfds, NULL, &tv) <= 0) {
-        printf("TCP connect/select timeout or error\n");
-        closesocket(sockfd);
-        socExit();
-        return 1;
-    }
-
-    // Check for socket error
-    int so_error = 0;
-    socklen_t len = sizeof(so_error);
-    getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &len);
-    if (so_error != 0) {
-        printf("connect error: %d\n", so_error);
-        closesocket(sockfd);
-        socExit();
-        return 1;
-    }
 
     // Initialize mbedTLS on this connected socket
     int ret = tls_init_mbed(sockfd);
-    if (ret != 0) {
-        printf("tls_init_mbed failed\n");
-        closesocket(sockfd);
-        tls_free_mbed();
-        socExit();
-        return 1;
-    }
 
     // Perform handshake — this may return WANT_READ/WANT_WRITE initially because socket is non-blocking.
     while (true) {
@@ -326,12 +298,6 @@ int main(int argc, char **argv) {
             tv.tv_sec = 5; tv.tv_usec = 0;
             select(sockfd + 1, NULL, &wf, NULL, &tv);
             continue;
-        } else {
-            printf("Handshake failed\n");
-            closesocket(sockfd);
-            tls_free_mbed();
-            socExit();
-            return 1;
         }
     }
 
@@ -341,45 +307,46 @@ int main(int argc, char **argv) {
     // okay
     // was i the one who made that comment???
 
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0; // NOT 10ms
+
     u32 textcolor;
     u32 themecolor;
 
-    // --- Main loop (UI + chat) ---
-    char inbuf[512];
+    char buffer[512];
     while (aptMainLoop()) {
         gspWaitForVBlank();
         hidScanInput();
 
         if (hidKeysDown() & KEY_A) {
+            char message[64];
+            char input[64];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
-            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
+            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-            SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username));
-            if (button == SWKBD_BUTTON_CONFIRM) {
-                snprintf(usernameholder, sizeof(usernameholder), "Username: %s", username);
-            }
+
+            SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
         }
 
         if (hidKeysDown() & KEY_B) {
-            char message[256];
-            char sendbuf[512];
+            char message[80];
+            char msg[128];
 
+            char input[80];
             SwkbdState swkbd;
-            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 128);
+            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 80);
             swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+
             SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
             if (button == SWKBD_BUTTON_CONFIRM) {
-                snprintf(sendbuf, sizeof(sendbuf), "<%s>: %s", username[0] ? username : "guest", message);
-                int sret = tls_send_mbed(sendbuf, strlen(sendbuf));
-                if (sret < 0) {
-                    printf("tls_send_mbed failed\n");
-                }
+                sprintf(msg, "<%s>: %s", username, message);
+                tls_send_mbed(msg, strlen(msg));
             }
         }
 
-        // Non-blocking poll for incoming TLS data using select on the raw socket
         fd_set readfds;
         struct timeval timeout;
         FD_ZERO(&readfds);
@@ -389,17 +356,22 @@ int main(int argc, char **argv) {
 
         if (select(sockfd + 1, &readfds, NULL, NULL, &timeout) > 0) {
             // Data likely available; read via mbedTLS
-            memset(inbuf, 0, sizeof(inbuf));
-            ssize_t got = tls_recv_text_mbed(inbuf, sizeof(inbuf));
+            memset(buffer, 0, sizeof(buffer));
+            ssize_t got = tls_recv_text_mbed(buffer, sizeof(buffer));
             if (got > 0) {
                 char tmp[6000];
-                snprintf(tmp, sizeof(tmp), "%s\n%s", chatstring, inbuf);
+                snprintf(tmp, sizeof(tmp), "%s\n%s", chatstring, buffer);
                 strncpy(chatstring, tmp, sizeof(chatstring));
                 chatscroll -= 15;
 
-                const char *parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
+                char temp[6000];
+                snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
+                strncpy(chatstring, temp, sizeof(chatstring));
+                chatscroll = chatscroll - 15; // testing with this
+
+                const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
                 if (parseResult != NULL && *parseResult != '\0') {
-                    chatbuffer = C2D_TextBufResize(chatbuffer, 16384);
+                    chatbuffer = C2D_TextBufResize(chatbuffer, 8192);
                     if (chatbuffer) {
                         C2D_TextBufClear(chatbuffer);
                         C2D_TextParse(&chat, chatbuffer, chatstring);
@@ -418,6 +390,16 @@ int main(int argc, char **argv) {
                 break;
             }
         }
+
+
+        if (strlen(chatstring) > 3500) {
+            strcpy(chatstring, "-chat cleared!-\n");
+            C2D_TextBufClear(chatbuffer);
+            C2D_TextParse(&chat, chatbuffer, chatstring);
+            C2D_TextOptimize(&chat);
+            chatscroll = 20;
+        }
+
 
         if (hidKeysDown() & KEY_START) break;
 
@@ -458,7 +440,7 @@ int main(int argc, char **argv) {
 
         switched = false;
 
-        // Rendering
+
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(top, themecolor);
         C2D_SceneBegin(top);
@@ -522,6 +504,12 @@ int main(int argc, char **argv) {
         C2D_SceneBegin(bottom);
         DrawText(chatstring, 0.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
         C3D_FrameEnd(0);
+
+
+        // svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
+        // audio is gone rn
+        // will bring it back soon
+
     }
 
     // Cleanup
