@@ -59,3 +59,7 @@ dkms.conf
 .ssh
 .bash_history
 .my_name_is_the_fucking_mimic_oh_yeah
+
+# SSL files
+cert.pem
+key.pem
