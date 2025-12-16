@@ -29,12 +29,14 @@ clients_lock = threading.Lock()
 # --- Helper Functions ---
 
 
-def process_chat_message(client_socket, message):
-    """
-    Helper function to process a single message from a client.
-    """
+def process_chat_message(client_socket, message, client_ip):
+    SERVER_IPS = {"127.0.0.1", "104.236.25.60"} # Server IP (these can be public but any admin's IPs cannot) if one of these goes rogue then remove them from this list and restart the aurorachat server.
     message_strip = message.strip()
     if not message_strip:
+        return
+
+    if client_ip in SERVER_IPS:
+        broadcast(f"{message_strip}\n")
         return
 
     # Termination Trigger Check
