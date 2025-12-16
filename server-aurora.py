@@ -88,7 +88,9 @@ def broadcast(message):
 
     for c in snapshot:
         try:
-            c.sendall(message.encode("utf-8"))
+            data = message.encode("utf-8")
+            pkt = len(data).to_bytes(4, "big") + data
+            c.sendall(pkt)
         except Exception:
             dead.append(c)
 
@@ -214,19 +216,41 @@ def handle_client(ssl_sock, addr):
                     break
 
                 chunk = data.decode("utf-8", errors="ignore")
-                buffer += chunk
+                buffer = b""
 
-                # Process newline-delimited messages
-                while '\n' in buffer:
-                    line, buffer = buffer.split('\n', 1)
-                    line = line.rstrip('\r')
-                    if line:
-                        try:
-                            process_chat_message(ssl_sock, line)
-                        except ConnectionResetError:
-                            # requested forced disconnect
-                            print("Forced disconnect by process_chat_message.")
-                            raise
+                while True:
+                    try:
+                        data = ssl_sock.recv(4096)
+                        if not data:
+                            print("Client closed connection (recv returned b\"\").")
+                            break
+                        
+                        buffer += data
+
+                        while True:
+                            # Need at least 4 bytes for length
+                            if len(buffer) < 4:
+                                break
+                            
+                            msg_len = int.from_bytes(buffer[:4], "big")
+
+                            if msg_len > MAX_MESSAGE_LENGTH:
+                                raise ConnectionResetError("Message too large")
+
+                            if len(buffer) < 4 + msg_len:
+                                break  # wait for more data
+                            
+                            msg_bytes = buffer[4:4 + msg_len]
+                            buffer = buffer[4 + msg_len:]
+
+                            message = msg_bytes.decode("utf-8", errors="ignore")
+                            process_chat_message(ssl_sock, message, client_ip)
+
+                    except socket.timeout:
+                        continue
+                    except Exception as e:
+                        print("Handler exception:", repr(e), file=sys.stderr)
+                        break
 
                 # If no newline but buffer becomes huge, drop the client
                 if len(buffer) > MAX_MESSAGE_LENGTH * 4:

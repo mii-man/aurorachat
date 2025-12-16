@@ -174,6 +174,9 @@ int main(int argc, char **argv) {
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
 
+    static unsigned char recvbuf[8192];
+    static size_t recvlen = 0;
+
     C2D_TextParse(&chat, chatbuffer, chatstring);
     C2D_TextOptimize(&chat);
 
@@ -237,48 +240,91 @@ int main(int argc, char **argv) {
         // ---- Send message ----
         if (hidKeysDown() & KEY_B && connected) {
             char message[80];
-            char msg[128];
+            char msg[512];
             SwkbdState swkbd;
             swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 80);
             swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
             swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
-            if (swkbdInputText(&swkbd, message, sizeof(message)) == SWKBD_BUTTON_CONFIRM) {
+            SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
+            if (button == SWKBD_BUTTON_CONFIRM) {
                 snprintf(msg, sizeof(msg), "<%s>: %s", username, message);
-                mbedtls_ssl_write(&ssl,
-                    (const unsigned char*)msg,
-                    strlen(msg));
+                uint32_t len = strlen(msg);
+            
+                if (len > 456) { // server max message length
+                    append_chat_message("-Message too long!-");
+                } else {
+                    uint32_t netlen = htonl(len);
+                    int ret;
+                
+                    // send length
+                    do {
+                        ret = mbedtls_ssl_write(&ssl,
+                            (unsigned char*)&netlen,
+                            4);
+                    } while (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+                             ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+                    
+                    // send message
+                    size_t sent = 0;
+                    while (sent < len) {
+                        ret = mbedtls_ssl_write(&ssl,
+                            (unsigned char*)msg + sent,
+                            len - sent);
+                        if (ret > 0) sent += ret;
+                        else if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
+                                 ret != MBEDTLS_ERR_SSL_WANT_WRITE) break;
+                    }
+                
+                    if (ret < 0) {
+                        char err[128];
+                        mbedtls_strerror(ret, err, sizeof(err));
+                        append_chat_message(err);
+                    }
+                }
             }
         }
 
         // ---- Receive messages ----
         if (connected) {
-            int len = mbedtls_ssl_read(&ssl,
-                (unsigned char*)buffer,
-                sizeof(buffer) - 1);
-                        
-            if (len > 0) {
-                buffer[len] = 0;
-                append_chat_message(buffer);
-            }
-            else if (len == 0) {
-                // orderly shutdown from server
-                connected = false;
-                append_chat_message("-Server closed connection-");
-            }
-            else if (len == MBEDTLS_ERR_SSL_WANT_READ ||
-                     len == MBEDTLS_ERR_SSL_WANT_WRITE) {
-                // normal: no data yet
-            }
-            else {
-                // real error
-                char err[128];
-                mbedtls_strerror(len, err, sizeof(err));
-                append_chat_message(err);
+            int r = mbedtls_ssl_read(&ssl,
+                recvbuf + recvlen,
+                sizeof(recvbuf) - recvlen);
             
+            if (r > 0) {
+                recvlen += r;
+            
+                while (recvlen >= 4) {
+                    uint32_t msglen;
+                    memcpy(&msglen, recvbuf, 4);
+                    msglen = ntohl(msglen);
+                
+                    if (msglen > 456) { // server max message length
+                        append_chat_message("-Server sent too large message!-");
+                        connected = false;
+                        break;
+                    }
+                
+                    if (recvlen < 4 + msglen)
+                        break; // wait for full message
+                
+                    char msg[457]; // max 456 + null terminator
+                    memcpy(msg, recvbuf + 4, msglen);
+                    msg[msglen] = 0;
+                
+                    append_chat_message(msg);
+                
+                    memmove(recvbuf,
+                            recvbuf + 4 + msglen,
+                            recvlen - (4 + msglen));
+                    recvlen -= (4 + msglen);
+                }
+            } else if (r == MBEDTLS_ERR_SSL_WANT_READ ||
+                       r == MBEDTLS_ERR_SSL_WANT_WRITE) {
+                // nothing to do
+            } else {
                 connected = false;
-                mbedtls_ssl_close_notify(&ssl);
-                mbedtls_net_free(&server_fd);
+                append_chat_message("-Disconnected-");
             }
         }
 
