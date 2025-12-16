@@ -127,11 +127,20 @@ bool connect_to_server(mbedtls_net_context *server_fd, mbedtls_ssl_context *ssl,
     if (mbedtls_ssl_setup(ssl, conf) != 0) return false;
     mbedtls_ssl_set_bio(ssl, server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
-    while (mbedtls_ssl_handshake(ssl) != 0) {
-        // keep retrying handshake
+    int ret;
+    while ((ret = mbedtls_ssl_handshake(ssl)) != 0) {
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
+            ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+
+            char err[128];
+            mbedtls_strerror(ret, err, sizeof(err));
+            append_chat_message(err);
+            return false;
+        }
     }
 
     mbedtls_net_set_nonblock(server_fd);
+
     return true;
 }
 
@@ -167,6 +176,19 @@ int main(int argc, char **argv) {
 
     C2D_TextParse(&chat, chatbuffer, chatstring);
     C2D_TextOptimize(&chat);
+
+    u32 *soc_buffer = memalign(0x1000, 0x100000);
+    if (!soc_buffer) {
+        // placeholder
+    }
+    if (socInit(soc_buffer, 0x100000) != 0) {
+        // placeholder
+    }
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        // placeholder
+    }
 
     // ---- mbedTLS objects ----
     mbedtls_net_context server_fd;
@@ -223,40 +245,40 @@ int main(int argc, char **argv) {
 
             if (swkbdInputText(&swkbd, message, sizeof(message)) == SWKBD_BUTTON_CONFIRM) {
                 snprintf(msg, sizeof(msg), "<%s>: %s", username, message);
-                int ret;
-                while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
-                    char err_buf[100];
-                    mbedtls_strerror(ret, err_buf, sizeof(err_buf));
-                    append_chat_message(err_buf); // print to chat for debug
-                }
+                mbedtls_ssl_write(&ssl,
+                    (const unsigned char*)msg,
+                    strlen(msg));
             }
         }
 
         // ---- Receive messages ----
         if (connected) {
-            ssize_t len = mbedtls_ssl_read(&ssl, (unsigned char*)buffer, sizeof(buffer)-1);
+            int len = mbedtls_ssl_read(&ssl,
+                (unsigned char*)buffer,
+                sizeof(buffer) - 1);
+                        
             if (len > 0) {
-                buffer[len] = '\0';
-                char temp[6000];
-                snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
-                strncpy(chatstring, temp, sizeof(chatstring));
-                chatscroll -= 15;
-
-                const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
-                if (parseResult != NULL && *parseResult != '\0') {
-                    chatbuffer = C2D_TextBufResize(chatbuffer, 8192);
-                    if (chatbuffer) {
-                        C2D_TextBufClear(chatbuffer);
-                        C2D_TextParse(&chat, chatbuffer, chatstring);
-                    }
-                }
-                C2D_TextOptimize(&chat);
-            } else if (len <= 0) {
-                // Connection lost
+                buffer[len] = 0;
+                append_chat_message(buffer);
+            }
+            else if (len == 0) {
+                // orderly shutdown from server
+                connected = false;
+                append_chat_message("-Server closed connection-");
+            }
+            else if (len == MBEDTLS_ERR_SSL_WANT_READ ||
+                     len == MBEDTLS_ERR_SSL_WANT_WRITE) {
+                // normal: no data yet
+            }
+            else {
+                // real error
+                char err[128];
+                mbedtls_strerror(len, err, sizeof(err));
+                append_chat_message(err);
+            
                 connected = false;
                 mbedtls_ssl_close_notify(&ssl);
                 mbedtls_net_free(&server_fd);
-                append_chat_message("-Disconnected-");
             }
         }
 
