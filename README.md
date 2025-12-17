@@ -14,7 +14,7 @@ There are server outages very often, the reason why is because we are constantly
 # Security
 We are currently working on end-to-end encryption (actually I don't know that you can call it that or not) that will prevent MITM (Man In The Middle) attacks and protect our users.
 
-Current ETA: NONE (On hold)
+Current ETA: Soon (trust bro)
 
 
 <h2>Development Log</h2>
