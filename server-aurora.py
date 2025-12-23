@@ -1,5 +1,6 @@
 import socket
 import ssl
+import struct
 import threading
 import time
 import sys
@@ -16,14 +17,13 @@ MAX_MESSAGE_LENGTH = 456
 TERMINATION_TRIGGER = "<Fleetway>"
 MAX_CONNECTIONS_PER_IP = 2
 
-CERTFILE = "cert.pem"
-KEYFILE = "key.pem"
+CERTFILE = "server.pem"
+KEYFILE = "server.key"
 
 # --- Global State ---
 clients = []               # list of SSLSocket objects
 connections_per_ip = {}    # dict: ip -> set of sockets
 rate_limit = {}            # maps SSLSocket -> last_msg_ts_ms
-connection_times = {}      # maps (ip, port) -> last_conn_ts_ms
 clients_lock = threading.Lock()
 
 # --- Helper Functions ---
@@ -95,24 +95,24 @@ def broadcast(message):
             dead.append(c)
 
     # cleanup dead sockets
-    for c in dead:
+    for c in set(dead):
         remove_client(c)
 
 
 def remove_client(client_socket):
-    """
-    Idempotent client cleanup that attempts a clean TLS shutdown first,
-    then closes the underlying socket. Also removes rate-limit and client lists.
-    """
-    # Remove from clients list
+    client_ip = getattr(client_socket, "client_ip", None)
+
     with clients_lock:
         if client_socket in clients:
             clients.remove(client_socket)
-        for ip, sock_set in list(connections_per_ip.items()):
-            if client_socket in sock_set:
-                sock_set.remove(client_socket)
-            if not sock_set:
-                del connections_per_ip[ip]
+        rate_limit.pop(client_socket, None)
+
+        if client_ip:
+            ip_set = connections_per_ip.get(client_ip)
+            if ip_set:
+                ip_set.discard(client_socket)
+                if not ip_set:
+                    del connections_per_ip[client_ip]
 
     # Attempt a polite TLS shutdown to send close_notify.
     try:
@@ -161,117 +161,45 @@ def remove_client(client_socket):
 
 
 def handle_client(ssl_sock, addr):
-    """
-    Robust handler: recv timeout, newline-delimited messages,
-    always removes/closes the client on exit.
-    """
-    client_ip, client_port = addr[0], addr[1]
-    now_ms = int(time.time() * 1000)
+    client_ip = addr[0]
+    ssl_sock.client_ip = client_ip
+    buffer = b""
 
-    # rate-limit connection attempts by (ip,port) tuple (safer than ip-only)
-    conn_key = (client_ip, client_port)
-    last_connection = connection_times.get(conn_key, 0)
-    if now_ms - last_connection < RATE_LIMIT_MS:
-        try:
-            ssl_sock.close()
-        except Exception:
-            pass
-        return
-
-    connection_times[conn_key] = now_ms
-
-    with clients_lock:
-        ip_clients = connections_per_ip.get(client_ip, set())
-        if len(ip_clients) >= MAX_CONNECTIONS_PER_IP:
-            print(f"Rejecting new connection from {client_ip} (limit reached)")
-            try:
-                ssl_sock.sendall(b"Too many connections from your IP\n")
-            except Exception:
-                pass
-            ssl_sock.close()
-            return
-
-        # Add this client
-        ip_clients.add(ssl_sock)
-        connections_per_ip[client_ip] = ip_clients
-        clients.append(ssl_sock)
-        print(f"Client connected. Total clients: {len(clients)}")
-
-    buffer = ""
     try:
-        # handshake already done; tls_wrap_nonblocking set a 1s timeout
-        # ensure socket is blocking with timeout
-        try:
-            ssl_sock.setblocking(True)
-            ssl_sock.settimeout(1.0)
-        except Exception:
-            pass
+        ssl_sock.settimeout(1.0)
 
         while True:
             try:
                 data = ssl_sock.recv(4096)
-                # clean disconnect: peer closed connection
                 if not data:
-                    print("Client closed connection (recv returned b\"\").")
                     break
 
-                chunk = data.decode("utf-8", errors="ignore")
-                buffer = b""
+                buffer += data
 
-                while True:
+                while len(buffer) >= 4:
+                    msg_len = struct.unpack("!I", buffer[:4])[0]
+
+                    if msg_len > MAX_MESSAGE_LENGTH:
+                        raise ConnectionResetError("Message too large")
+
+                    if len(buffer) < 4 + msg_len:
+                        break  # wait for more data
+
+                    msg_bytes = buffer[4:4 + msg_len]
+                    buffer = buffer[4 + msg_len:]
+
                     try:
-                        data = ssl_sock.recv(4096)
-                        if not data:
-                            print("Client closed connection (recv returned b\"\").")
-                            break
-                        
-                        buffer += data
-
-                        while True:
-                            # Need at least 4 bytes for length
-                            if len(buffer) < 4:
-                                break
-                            
-                            msg_len = int.from_bytes(buffer[:4], "big")
-
-                            if msg_len > MAX_MESSAGE_LENGTH:
-                                raise ConnectionResetError("Message too large")
-
-                            if len(buffer) < 4 + msg_len:
-                                break  # wait for more data
-                            
-                            msg_bytes = buffer[4:4 + msg_len]
-                            buffer = buffer[4 + msg_len:]
-
-                            message = msg_bytes.decode("utf-8", errors="ignore")
-                            process_chat_message(ssl_sock, message, client_ip)
-
-                    except socket.timeout:
-                        continue
-                    except Exception as e:
-                        print("Handler exception:", repr(e), file=sys.stderr)
-                        break
-
-                # If no newline but buffer becomes huge, drop the client
-                if len(buffer) > MAX_MESSAGE_LENGTH * 4:
-                    try:
-                        ssl_sock.sendall(b"Input buffer overflow; closing connection.\n")
+                        message = msg_bytes.decode("utf-8", errors="replace")
                     except Exception:
-                        pass
-                    print("Buffer overflow; dropping client.")
-                    break
+                        continue
+
+                    process_chat_message(ssl_sock, message, client_ip)
 
             except socket.timeout:
-                # no data this interval — loop back and allow housekeeping
                 continue
 
-            except (ssl.SSLEOFError, ConnectionResetError, OSError) as e:
-                # The client disconnected or connection was reset
-                break
-
-            except Exception as e:
-                print("SSL socket error:", e, file=sys.stderr)
-                break
+    except Exception as e:
+        print("Handler exception:", repr(e), file=sys.stderr)
 
     finally:
         remove_client(ssl_sock)
@@ -364,6 +292,28 @@ def start_server():
                 ssl_client = tls_wrap_nonblocking(context, raw_client, addr)
                 if not ssl_client:
                     continue  # handshake failed or not TLS
+
+                client_ip = addr[0]
+
+                with clients_lock:
+                    ip_set = connections_per_ip.get(client_ip, set())
+
+                    if len(ip_set) >= MAX_CONNECTIONS_PER_IP:
+                        print(f"Rejecting connection from {client_ip} (limit reached)")
+                        try:
+                            ssl_client.sendall(b"Too many connections from your IP\n")
+                        except Exception:
+                            pass
+                        ssl_client.close()
+                        continue
+                    
+                    ip_set.add(ssl_client)
+                    connections_per_ip[client_ip] = ip_set
+                    clients.append(ssl_client)
+
+                    total = len(clients)
+
+                print(f"Client connected. Total clients: {total}")
 
                 t = threading.Thread(target=handle_client, args=(ssl_client, addr))
                 t.daemon = True

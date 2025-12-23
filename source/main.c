@@ -51,8 +51,8 @@ int theme = 1;
 bool switched = false;
 
 
-
-
+#define SERVER_IP "127.0.0.1"
+#define SERVER_PORT "8961"
 
 
 
@@ -110,7 +110,7 @@ bool connect_to_server(mbedtls_net_context *server_fd, mbedtls_ssl_context *ssl,
         return false;
     }
 
-    if (mbedtls_net_connect(server_fd, "127.0.0.1", "8961", MBEDTLS_NET_PROTO_TCP) != 0) {
+    if (mbedtls_net_connect(server_fd, SERVER_IP, SERVER_PORT, MBEDTLS_NET_PROTO_TCP) != 0) {
         append_chat_message("-Error: Connection Failed-");
         return false;
     }
@@ -262,8 +262,7 @@ int main(int argc, char **argv) {
                         ret = mbedtls_ssl_write(&ssl,
                             (unsigned char*)&netlen,
                             4);
-                    } while (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-                             ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+                    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
                     
                     // send message
                     size_t sent = 0;
@@ -272,8 +271,7 @@ int main(int argc, char **argv) {
                             (unsigned char*)msg + sent,
                             len - sent);
                         if (ret > 0) sent += ret;
-                        else if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
-                                 ret != MBEDTLS_ERR_SSL_WANT_WRITE) break;
+                        else if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) break;
                     }
                 
                     if (ret < 0) {
@@ -319,8 +317,7 @@ int main(int argc, char **argv) {
                             recvlen - (4 + msglen));
                     recvlen -= (4 + msglen);
                 }
-            } else if (r == MBEDTLS_ERR_SSL_WANT_READ ||
-                       r == MBEDTLS_ERR_SSL_WANT_WRITE) {
+            } else if (r == MBEDTLS_ERR_SSL_WANT_READ || r == MBEDTLS_ERR_SSL_WANT_WRITE) {
                 // nothing to do
             } else {
                 connected = false;
