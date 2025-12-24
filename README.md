@@ -51,4 +51,5 @@ Note (from hackertron): I don't really have anything better to do, but I help ou
 - [ ] account stuff
 - [ ] other stuff
 - [ ] sound stuff
+- [ ] advanced chating
 - [ ] and all the stuff that we forgot 
