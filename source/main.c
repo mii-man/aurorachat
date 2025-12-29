@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
                 char temp[6000];
                 snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
                 strncpy(chatstring, temp, sizeof(chatstring));
-                chatscroll = chatscroll - 15; // testing with this
+                chatscroll = chatscroll - 15; // testing with this // hey hackertron here, are you done "testign" "with" "this"
 
                 const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
                 if (parseResult != NULL && *parseResult != '\0') {
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
 
 
             
-            DrawText("v0.0.3.2", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
+            DrawText("v0.0.4.0", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
             
