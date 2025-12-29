@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     
-    themamt = 9
+    int themamt = 9;
     
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
