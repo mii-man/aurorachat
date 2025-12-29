@@ -7,6 +7,26 @@
   <a href="https://github.com/ItsFuntum/aurorachat-wiiu">Wii U client</a>
 </div>
 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+
 <div align="center">
   <details>
   <summary><strong>Development Log</strong></summary>
@@ -32,10 +52,84 @@
   </details>
 </div>
 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+
 <h1 align="center">Welcome to the aurorachat repository!</h1>
 This repository is <b>open</b> for contributions! If you'd like to, you may open a PR or an issue, contributing helps us as we develop aurorachat!
 
-
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ ‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
+‎ 
 <h1 align="center">How to build aurorachat</h1>
 
 Install devkitpro with the 3DS dev tools, then execute the following commands (you'll have to adjust them if you're using mac or linux)
@@ -54,6 +148,7 @@ make
 - [X] basic chatting 
 - [X] awesome themes
 - [ ] awesome encryption
+- [ ] not happening because IM EVIL.
 - [ ] account stuff
 - [ ] other stuff
 - [ ] sound stuff
