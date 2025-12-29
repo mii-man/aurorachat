@@ -1,4 +1,4 @@
-<h1>aurorachat</h1>
+<h1 style="text-align: center">aurorachat</h1>
 A chatting application for the Nintendo 3DS and 2DS line of systems
 
 
