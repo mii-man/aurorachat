@@ -54,7 +54,6 @@ make
 - [X] basic chatting 
 - [X] awesome themes
 - [ ] awesome encryption
-- [ ] not happening because IM EVIL.
 - [ ] account stuff
 - [ ] other stuff
 - [ ] sound stuff
