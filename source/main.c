@@ -93,7 +93,9 @@ int main(int argc, char **argv) {
     C2D_Prepare();
     C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-
+    
+    themamt = 9
+    
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
 
@@ -234,7 +236,7 @@ int main(int argc, char **argv) {
                 theme++;
                 switched = true;
             }
-            if (theme > 8) {
+            if (theme > themamt) {
                 theme = 1;
             }
         }
@@ -244,7 +246,7 @@ int main(int argc, char **argv) {
                 switched = true;
             }
             if (theme < 1) {
-                theme = 8;
+                theme = themamt;
             }
         }
 
@@ -278,7 +280,7 @@ int main(int argc, char **argv) {
             textcolor = C2D_Color32(17, 255, 0, 255);
         }
         if (theme == 5) {
-            themename = "True Dark Mode";
+            themename = "Dark Mode";
             themecolor = C2D_Color32(23, 27, 57, 255);
             textcolor = C2D_Color32(255, 255, 255, 255);
         }
@@ -297,8 +299,11 @@ int main(int argc, char **argv) {
             themecolor = C2D_Color32(6, 0, 57, 255);
             textcolor = C2D_Color32(255, 255, 255, 255);
         }
-        
-
+        if (theme == 9) {
+            themename = "True Dark Mode";
+            themecolor = C2D_Color32(0, 0, 0, 255);
+            textcolor = C2D_Color32(255, 255, 255, 255);
+        }
 
         if (scene == 1) {
             DrawText("aurorachat", 260.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
