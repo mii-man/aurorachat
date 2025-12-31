@@ -44,9 +44,51 @@ bool switched = false;
 
 
 
+// imagine audioing, couldnt be auditorial, coudio we
 
+#define SAMPLE_RATE 48000
+#define CHANNELS 2
+#define BUFFER_MS 120
+#define SAMPLES_PER_BUF (SAMPLE_RATE * BUFFER_MS / 1000)
+#define WAVEBUF_SIZE (SAMPLES_PER_BUF * CHANNELS * sizeof(int16_t))
 
+ndspWaveBuf waveBufs[2];
+int16_t *audioBuffer = NULL;
+LightEvent audioEvent;
+volatile bool quit = false;
 
+bool fillBuffer(OggOpusFile *file, ndspWaveBuf *buf) {
+    int total = 0;
+    while (total < SAMPLES_PER_BUF) {
+        int16_t *ptr = buf->data_pcm16 + (total * CHANNELS);
+        int ret = op_read_stereo(file, ptr, (SAMPLES_PER_BUF - total) * CHANNELS);
+        if (ret <= 0) break;
+        total += ret;
+    }
+    if (total == 0) return false;
+    buf->nsamples = total;
+    DSP_FlushDataCache(buf->data_pcm16, total * CHANNELS * sizeof(int16_t));
+    ndspChnWaveBufAdd(0, buf);
+    return true;
+}
+
+void audioCallback(void *arg) {
+    if (!quit) LightEvent_Signal(&audioEvent);
+}
+
+void audioThread(void *arg) {
+    OggOpusFile *file = (OggOpusFile*)arg;
+    while (!quit) {
+        for (int i = 0; i < 2; i++) {
+            if (waveBufs[i].status == NDSP_WBUF_DONE) {
+                if (!fillBuffer(file, &waveBufs[i])) { quit = true; return; }
+            }
+        }
+        svcSleepThread(10000000L);
+//        LightEvent_Wait(&audioEvent);
+    }
+    return;
+}
 
 
 
@@ -95,6 +137,32 @@ int main(int argc, char **argv) {
     C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     
     int themamt = 9;
+
+    u32 sampleCount;
+
+    ndspInit();
+    ndspSetOutputMode(NDSP_OUTPUT_STEREO);
+    ndspChnSetRate(0, SAMPLE_RATE);
+    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
+    ndspSetCallback(audioCallback, NULL);
+
+    OggOpusFile *file = op_open_file("romfs:/Project_4.opus", NULL);
+
+    sbuffer = C2D_TextBufNew(4096);
+
+    audioBuffer = linearAlloc(WAVEBUF_SIZE * 2);
+    memset(waveBufs, 0, sizeof(waveBufs));
+    for (int i = 0; i < 2; i++) {
+        waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
+        waveBufs[i].status = NDSP_WBUF_DONE;
+    }
+
+    LightEvent_Init(&audioEvent, RESET_ONESHOT);
+    Thread thread = threadCreate(audioThread, file, 32 * 1024, 0x3F, 1, false);
+
+    // chatgpt
+    if (!fillBuffer(file, &waveBufs[0]));
+    if (!fillBuffer(file, &waveBufs[1]));
     
     sbuffer = C2D_TextBufNew(4096);
     chatbuffer = C2D_TextBufNew(4096);
@@ -306,6 +374,8 @@ int main(int argc, char **argv) {
         }
 
         if (scene == 1) {
+
+
             DrawText("aurorachat", 260.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
             
 
@@ -316,7 +386,7 @@ int main(int argc, char **argv) {
 
 
             
-            DrawText("v0.0.3.2", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
+            DrawText("v0.0.4.0", 335.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
             
             
             
@@ -342,14 +412,24 @@ int main(int argc, char **argv) {
         
         C2D_SceneBegin(bottom);
 
-        C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 0.0f, chatscroll, 0, 0.5, 0.5, textcolor, 290.0f);
+        C2D_DrawRectSolid(20, 0, 0, 275, 250, C2D_Color32(200, 200, 200, 70));
+        
+
+        C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 35.0f, chatscroll, 0, 0.5, 0.5, textcolor, 200.0f); // Word wrap is broken because of citro2d
 
 
 
         C3D_FrameEnd(0);
 
+        if (waveBufs[0].status == NDSP_WBUF_DONE) {
+            if (!fillBuffer(file, &waveBufs[0]));
+        }
+        if (waveBufs[1].status == NDSP_WBUF_DONE) {
+            if (!fillBuffer(file, &waveBufs[1]));
+        }
 
-        // svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
+
+        svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
         // audio is gone rn
         // will bring it back soon
 
