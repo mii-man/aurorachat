@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
                 char temp[6000];
                 snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
                 strncpy(chatstring, temp, sizeof(chatstring));
-                chatscroll = chatscroll - 15; // testing with this
+                chatscroll = chatscroll - 15; // testing with this // hey hackertron here, are you done "testign" "with" "this"
 
                 const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
                 if (parseResult != NULL && *parseResult != '\0') {
