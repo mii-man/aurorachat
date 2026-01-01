@@ -35,6 +35,10 @@
 *.i*86
 *.x86_64
 *.hex
+*.3dsx
+*.cia
+*.icn
+*.bnr
 
 # Debug files
 *.dSYM/
