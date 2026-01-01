@@ -42,7 +42,8 @@ ROMFS		:=	romfs
 GFXBUILD	:=	$(ROMFS)/gfx
 APP_TITLE   :=  aurorachat
 APP_AUTHOR  :=  mii-man and other contributors
-APP_DESCRIPTION  :=  A chat app for 3DS based of of hbchat but more secure
+APP_DESCRIPTION  :=  A chatting app for the 3DS inspired by hbchat
+ICON		:= meta/icon.png
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
