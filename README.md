@@ -8,9 +8,10 @@
 </div>
 
 ‎ 
-‎ 
-‎ <h2 align="center">Where can I get immediate, easy builds?</h2>
-‎ Github Actions automatically provides us with builds! [Choose the latest run from here and download that build!](https://github.com/mii-man/aurorachat/actions/workflows/build.yml)
+<div align="center">‎ 
+  ‎ <h2>Where can I get immediate, easy builds?</h2>
+  ‎ <p>Github Actions automatically provides us with builds! <a href="https://github.com/mii-man/aurorachat/actions/workflows/build.yml">Choose the latest run and download the build in the Summary page!</a></p>
+</div>
 ‎ 
 ‎ ‎ 
 ‎ 
