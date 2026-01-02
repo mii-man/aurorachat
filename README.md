@@ -9,8 +9,8 @@
 
 ‎ 
 ‎ 
-‎ 
-‎ 
+‎ <h2 align="center">Where can I get immediate, easy builds?</h2>
+‎ Github Actions automatically provides us with builds! [Choose the latest run from here and download that build!](https://github.com/mii-man/aurorachat/actions/workflows/build.yml)
 ‎ 
 ‎ ‎ 
 ‎ 
