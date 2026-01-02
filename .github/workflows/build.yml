@@ -1,0 +1,30 @@
+name: Build Aurorachat
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Additional Dependencies
+        run: |
+          dkp-pacman -Syu --noconfirm 3ds-dev 3ds-opusfile
+
+      - name: Build Project
+        run: |
+          make
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurorachat Automatic Build (could be unfinished!)
+          path: ./aurorachat.3dsx
