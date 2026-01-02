@@ -153,8 +153,8 @@ make
 - [X] basic chatting 
 - [X] awesome themes
 - [ ] awesome encryption
-- [ ] account stuff
-- [ ] other stuff
-- [ ] sound stuff
+- [X] account stuff
+- [ ] other stuff<!-- virt did account and sound stuff, its just not in release -->
+- [X] sound stuff
 - [ ] advanced chating
 - [ ] and all the stuff that we forgot 
