@@ -6,18 +6,15 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: devkitpro/devkitarm:latest
+    container: devkitpro/devkitarm:latest  # Fully preconfigured
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install Additional Dependencies
-        run: |
-          dkp-pacman -Syu --noconfirm 3ds-dev 3ds-opusfile
 
       - name: Build Project
         run: |
