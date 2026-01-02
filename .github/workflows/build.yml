@@ -3,14 +3,18 @@ name: Build Aurorachat
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'source/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'source/**'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: devkitpro/devkitarm:latest  # Fully preconfigured
+    container: devkitpro/devkitarm:latest
 
     steps:
       - name: Checkout code
