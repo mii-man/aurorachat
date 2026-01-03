@@ -10,7 +10,7 @@
 ‎
 <div align="center">
   <h2>Where can I download stable builds?</h2>
-  <p>Go to our <a href="https://github.com/mii-man/aurorachat/">GitHub Releases!</a></p>
+  <p>Go to our <a href="https://github.com/mii-man/aurorachat/releases">GitHub Releases!</a></p>
 </div>
 <div align="center">‎ 
   ‎ <h2>Where can I get immediate, easy builds?</h2>
