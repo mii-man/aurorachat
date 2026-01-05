@@ -6,7 +6,7 @@ from better_profanity import profanity
 import os.path
 import os
 import bcrypt
-
+import re
 # Get directory of the auroraserver file
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ACCOUNT_DIR = os.path.join(SCRIPT_DIR, "accounts")
@@ -59,15 +59,20 @@ def process_chat_message(client, message, client_ip):
     if client_ip in SERVER_IPS:
         broadcast(f"{message_strip}\n")
         return
+    if message_strip.startswith("CHAT,"):
+        chat_body = message_strip[len("CHAT,"):]
 
-    if TERMINATION_TRIGGER in message_strip:
-        try:
-            farewell_message = "get out bro (destroyed for fleetway)"
-            client.sendall(farewell_message.encode('utf-8'))
-        except Exception:
-            pass
-        print(f"lmaooo fleetway detected get this guy OUT")
-        raise ConnectionResetError("Forced disconnect due to client's name being Fleetway.")
+        ip_regex = r"\b(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}\b"
+
+        if TERMINATION_TRIGGER in chat_body or re.search(ip_regex, chat_body):
+            try:
+                client.sendall(b"no doxxers here")
+            except Exception:
+                pass
+            print("IP or previous doxxer Fleetway detected in chat message")
+            raise ConnectionResetError(
+                "IP address detected in chat message or previous doxxer Fleetway detected"
+            )
 
     if len(message_strip) > MAX_MESSAGE_LENGTH:
         try:
@@ -129,6 +134,7 @@ def process_chat_message(client, message, client_ip):
                     client.username = username
                     client.logged_in = True
                     client.sendall("LOGIN_OK".encode('utf-8'))
+                    broadcast(f"* {client.username} joined the chat\n")
                 else:
                     print("Invalid password.")
                     client.sendall("LOGIN_WRONG_PASS".encode('utf-8'))
@@ -140,15 +146,21 @@ def process_chat_message(client, message, client_ip):
         client.sendall(str(client.logged_in).encode('utf-8'))
 
     # This exists to help prevent old clients from insecurely connecting and also helps block spammers
-    if not any(message_strip.startswith(cmd) for cmd in ["CHAT,", "MAKEACC,", "LOGINACC,", "LOGGEDIN?"]):
-        try:
-            farewell_message = "Your client is outdated. Update to use aurorachat."
-            client.sendall(farewell_message.encode('utf-8'))
-        except Exception:
-            pass
-        print(f"they're old")
-        raise ConnectionResetError("Forced disconnect due to outdated client.")
+    # i am commenting this out because it is conflicting with ip detection and i will do something else
+#    if not any(message_strip.startswith(cmd) for cmd in ["CHAT,", "MAKEACC,", "LOGINACC,", "LOGGEDIN?"]):
+#        try:
+#            farewell_message = "Your client is outdated. Update to use aurorachat."
+#            client.sendall(farewell_message.encode('utf-8'))
+#        except Exception:
+#            pass
+#        print(f"they're old")
+#        raise ConnectionResetError("Forced disconnect due to outdated client.")
 
+    # this is somethign else
+    if not any(message_strip.startswith(cmd) for cmd in ["CHAT,", "MAKEACC,", "LOGINACC,", "LOGGEDIN?"]):
+        client.sendall("our servers cannot process your message and will be ignoring it, please consider updating your client".encode('utf-8'))
+        print(f"Ignoring unknown command: {message_strip!r}")
+        return
 
 def broadcast(message):
     sockets_to_remove = []
@@ -199,10 +211,14 @@ def handle_client(client_socket, client_address):
                 break
             received_chunk = data.decode('utf-8', errors='ignore')
             buffer += received_chunk
+
             message_to_process = buffer.strip()
             buffer = ""
+
             if message_to_process:
                 process_chat_message(client, message_to_process, client_ip)
+
+
     except ConnectionResetError:
         print("Connection error from someplace: Connection reset or forced disconnect.")
     except socket.timeout:
