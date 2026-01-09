@@ -147,21 +147,17 @@ def process_chat_message(client, message, client_ip):
 
     # This exists to help prevent old clients from insecurely connecting and also helps block spammers
     # i am commenting this out because it is conflicting with ip detection and i will do something else
-#    if not any(message_strip.startswith(cmd) for cmd in ["CHAT,", "MAKEACC,", "LOGINACC,", "LOGGEDIN?"]):
-#        try:
-#            farewell_message = "Your client is outdated. Update to use aurorachat."
-#            client.sendall(farewell_message.encode('utf-8'))
-#        except Exception:
-#            pass
-#        print(f"they're old")
-#        raise ConnectionResetError("Forced disconnect due to outdated client.")
-
-    # this is somethign else
     if not any(message_strip.startswith(cmd) for cmd in ["CHAT,", "MAKEACC,", "LOGINACC,", "LOGGEDIN?"]):
-        client.sendall("our servers cannot process your message and will be ignoring it, please consider updating your client".encode('utf-8'))
-        print(f"Ignoring unknown command: {message_strip!r}")
-        return
+        try:
+            farewell_message = "Your client is outdated. Update to use aurorachat."
+            client.sendall(farewell_message.encode('utf-8'))
+        except Exception:
+            pass
+        print(f"they're old")
+        raise ConnectionResetError("Forced disconnect due to outdated client.")
 
+    
+    
 def broadcast(message):
     sockets_to_remove = []
     for client in clients:
