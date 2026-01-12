@@ -1,5 +1,6 @@
 <h1 align="center">aurorachat</h1>
 <p align="center">A chatting application for the Nintendo 3DS and 2DS line of systems</p>
+<p align="center">aurorachat is currently in a drout in terms of activity and development. We are working on major changes but please do be aware that many things will happen soon, but not yet!</p>
 
 
 <div align="center">
