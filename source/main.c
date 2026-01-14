@@ -1,6 +1,7 @@
 // aurorachat
 // Authored by mii-man, Virtualle, cool-guy-awesome, ItsFuntum, and manti-09.
 // NOTE: You CANNOT use swkbd while rendering! So don't! Otherwise you'll create the stupidest crash in history!
+// aurorachat 4 hehehehhahahah
 
 #include <3ds.h>
 #include <stdio.h>
