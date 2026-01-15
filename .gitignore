@@ -63,3 +63,9 @@ dkms.conf
 .ssh
 .bash_history
 .my_name_is_the_fucking_mimic_oh_yeah
+# SSL files
+*.pem
+*.key
+# my copy of siivagunner king for another day
+*.mp3
+*.mp4
