@@ -191,8 +191,7 @@ endif
 cia:
 	@echo "If this fails, run make with no parameters first."
 ifeq ($(OS),Windows_NT)
-	@cd ./cia-builder
-	@./ciabuilder.bat
+	@./cia-builder/ciabuilder.bat
 else
 ifeq ($(UNAME_S),Linux)
 	@cd ./cia-builder && sh ./ciabuilder.sh
