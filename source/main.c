@@ -1,7 +1,6 @@
 // aurorachat
-// Authored by mii-man, Virtualle, cool-guy-awesome, ItsFuntum, and manti-09.
+// Authored by mii-man, Virtualle, cool-guy-awesome, ItsFuntum, manti-09, and orstando.
 // NOTE: You CANNOT use swkbd while rendering! So don't! Otherwise you'll create the stupidest crash in history!
-// aurorachat 4 hehehehhahahah
 
 #include <3ds.h>
 #include <stdio.h>
@@ -10,39 +9,22 @@
 #include <arpa/inet.h>
 #include <malloc.h>
 #include <opusfile.h> // apparently this didnt mess with the compilation it was just a warning for me -.-
-
 #include <3ds/applets/swkbd.h>
-
 #include <citro2d.h>
 
 u32 __stacksize__ = 0x100000; // 1 MB
-
-
-
-
-
 C2D_TextBuf sbuffer;
 C2D_Text stext;
-
 C2D_TextBuf chatbuffer;
 C2D_Text chat;
 
 char chatstring[6000] = "-chat-";
 char usernameholder[64];
-
 float chatscroll = 20;
-
 int scene = 1;
-
 bool inacc = false;
-
 int theme = 8;
-
 bool switched = false;
-
-
-
-// imagine audioing, couldnt be auditorial, coudio we
 
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
@@ -88,11 +70,6 @@ void audioThread(void *arg) {
     return;
 }
 
-
-
-
-// function time
-
 void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u32 color, bool wordwrap) {
     C2D_TextBufClear(sbuffer);
     C2D_TextParse(&stext, sbuffer, text);
@@ -129,25 +106,6 @@ bool isSpriteTapped(C2D_Sprite* sprite, float scaleX, float scaleY) {
     if (!isTouched) wasTouched = false;
     return false;
 }
-
-
-
-
-
-
-
-
-// intentional
-// haha
-
-
-
-
-
-
-
-
-
 
 int main(int argc, char **argv) {
     romfsInit();
@@ -210,16 +168,14 @@ int main(int argc, char **argv) {
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(8961); // new niche meme?
-    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // one below 61 (new niche meme)
+    server.sin_port = htons(8961);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
     }
 
     char username[21]; //swkbd registers name, but client doesnt, now it does
-    // okay
-    // was i the one who made that comment???
 
     struct timeval timeout;
     timeout.tv_sec = 0;
@@ -270,20 +226,19 @@ int main(int argc, char **argv) {
                 }
             }
         }
-
         if (scene == 4) {
             if (hidKeysDown() & KEY_L) {
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
                 SwkbdButton button = swkbdInputText(&swkbd, acc_username, sizeof(acc_username));
             }
             if (hidKeysDown() & KEY_R) {
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
                 SwkbdButton button = swkbdInputText(&swkbd, acc_password, sizeof(acc_password));
@@ -297,16 +252,16 @@ int main(int argc, char **argv) {
         if (scene == 5) {
             if (hidKeysDown() & KEY_L) {
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
                 SwkbdButton button = swkbdInputText(&swkbd, acc_username, sizeof(acc_username));
             }
             if (hidKeysDown() & KEY_R) {
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
 
                 SwkbdButton button = swkbdInputText(&swkbd, acc_password, sizeof(acc_password));
@@ -317,8 +272,6 @@ int main(int argc, char **argv) {
                 send(sock, msg, strlen(msg), 0);
             }
         }
-
-
 //        if (hidKeysHeld() & KEY_X) {
 //            send(sock, "MAKEACC,RIZZ,GYATT", strlen("MAKEACC,RIZZ,GYATT"), 0);
 //        }
@@ -329,24 +282,17 @@ int main(int argc, char **argv) {
 //        if (hidKeysHeld() & KEY_R) {
 //            send(sock, "LOGGEDIN?", strlen("LOGGEDIN?"), 0);
 //        }
-
         fd_set readfds;
         struct timeval timeout;
-
         FD_ZERO(&readfds);
         FD_SET(sock, &readfds);
         timeout.tv_sec = 0;
         timeout.tv_usec = 0;
-
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
-
-                
                 buffer[len] = '\0';
-
                 lastbuffer[512] = buffer[len];
-
                 if (loginstatus == 0) {
                     char temp[6000];
                     snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
@@ -394,8 +340,6 @@ int main(int argc, char **argv) {
                 }
             }
         }
-
-
         if (strlen(chatstring) > 3500) {
             strcpy(chatstring, "-chat cleared!-\n");
             C2D_TextBufClear(chatbuffer);
@@ -403,26 +347,19 @@ int main(int argc, char **argv) {
             C2D_TextOptimize(&chat);
             chatscroll = 20;
         }
-
-
         if (hidKeysDown() & KEY_START) break;
-
         if (hidKeysHeld() & KEY_CPAD_DOWN) {
             chatscroll = chatscroll - 5;
         }
-
         if (hidKeysHeld() & KEY_CPAD_UP) {
             chatscroll = chatscroll + 5;
         }
-
         if ((hidKeysDown() & KEY_L) && scene == 1) {
             scene = 2;
         }
-
         if ((hidKeysDown() & KEY_X) && scene == 2) {
             scene = 1;
         }
-
         if (hidKeysDown() & KEY_DUP) {
             if (!switched) {
                 theme++;
@@ -441,17 +378,11 @@ int main(int argc, char **argv) {
                 theme = themamt;
             }
         }
-
         switched = false;
-
-
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(top, themecolor);
         C2D_SceneBegin(top);
-
         DrawText(lastbuffer, 140.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
-
-
         char *themename;
         if (theme == 1) {
             themename = "Aurora White";
@@ -500,54 +431,27 @@ int main(int argc, char **argv) {
         }
 
         if (scene == 1) {
-
-
             DrawText("aurorachat", 140.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
-            
-
             sprintf(usernameholder, "%s %s", "Username:", username);
-
             DrawText(usernameholder, 0.0f, 200.0f, 0, 1.0f, 1.0f, textcolor, false);
-
-
-
-            
             DrawText("v0.0.4.0", 175.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
-            
-            
-            
-
-
-
-
 //            DrawText("A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme", 0.0f, 0.0f, 0, 0.6f, 0.6f, textcolor, false);
-            
-            
-
-
 //            DrawText(themename, 0.0f, 270.0f, 0, 0.4f, 0.4f, textcolor, false);
 
         }
-
-
         if (scene == 2) {
             DrawText("(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
         }
-
         C2D_TargetClear(bottom, themecolor);
-        
         C2D_SceneBegin(bottom);
-        
         if (scene == 1 || scene == 2) {
             C2D_DrawRectSolid(20, 0, 0, 275, 250, C2D_Color32(200, 200, 200, 70));
             C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 35.0f, chatscroll, 0, 0.5, 0.5, textcolor, 200.0f);
         }
-
         if (scene == 3) {
             C2D_SceneBegin(top);
             DrawText("Press A to Sign Up.", 150.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
             DrawText("Press B to Log in.", 150.0f, 40.0f, 0, 0.4f, 0.4f, textcolor, false);
-
             if (hidKeysHeld() & KEY_A) {
                 loginstatus = 2;
                 scene = 4;
@@ -557,21 +461,18 @@ int main(int argc, char **argv) {
                 scene = 5;
             }
         }
-
         if (scene == 4) {
             C2D_SceneBegin(top);
             DrawText("Press L to set your username.", 0.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
             DrawText("Press R to set your password.", 0.0f, 40.0f, 0, 0.4f, 0.4f, textcolor, false);
             DrawText("Press X to register.", 0.0f, 80.0f, 0, 0.4f, 0.4f, textcolor, false);
         }
-
         if (scene == 5) {
             C2D_SceneBegin(top);
             DrawText("Press L to input your username.", 0.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
             DrawText("Press R to input your password.", 0.0f, 40.0f, 0, 0.4f, 0.4f, textcolor, false);
             DrawText("Press X to login after you've inputted your username and password.", 0.0f, 80.0f, 0, 0.4f, 0.4f, textcolor, false);
         }
-
         if (scene == 6) {
             C2D_SceneBegin(top);
             DrawText("Account created! Press A to proceed to the login screen.", 0.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
@@ -580,10 +481,7 @@ int main(int argc, char **argv) {
                 scene = 5;
             }
         }
-
-
         C3D_FrameEnd(0);
-
         if (waveBufs[0].status == NDSP_WBUF_DONE) {
             if (!fillBuffer(file, &waveBufs[0]));
         }
@@ -593,12 +491,7 @@ int main(int argc, char **argv) {
 
 
         svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
-
     }
-
-
-
-    
     closesocket(sock);
     ndspExit();
     socExit();
