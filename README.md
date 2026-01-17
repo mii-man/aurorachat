@@ -50,7 +50,7 @@ This repository is <b>open</b> for contributions! If you'd like to, you may open
 
 Install devkitpro with the 3DS development libraries and make, then execute the following commands based on your OS:
 
-Windows (via Msys2):
+Windows:
 ```sh
 pacman -S 3ds-opusfile
 git clone https://github.com/mii-man/aurorachat
