@@ -17,79 +17,11 @@
   ‎ <h2>Where can I get immediate, easy builds?</h2>
   ‎ <p>Github Actions automatically provides us with builds! <a href="https://github.com/mii-man/aurorachat/actions/workflows/build.yml">Choose the latest run and download the build in the Summary page!</a></p>
 </div>
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-
-
-
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
 
 <h1 align="center">Welcome to the aurorachat repository!</h1>
 This repository is <b>open</b> for contributions! If you'd like to, you may open a PR or an issue, contributing helps us as we develop aurorachat!
-
 ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ <div align="center">
+<div align="center">
   <details>
   <summary><strong>Development Log</strong></summary>
   
@@ -114,48 +46,45 @@ This repository is <b>open</b> for contributions! If you'd like to, you may open
   </details>
 </div>
 ‎ 
-‎ 
-‎ 
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ ‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
-‎ 
 <h1 align="center">How to build aurorachat</h1>
 
-Install devkitpro with the 3DS dev tools, then execute the following commands (you'll have to adjust them if you're using mac or linux)
+Install devkitpro with the 3DS development libraries and make, then execute the following commands based on your OS:
 
+Windows:
 ```sh
 pacman -S 3ds-opusfile
 git clone https://github.com/mii-man/aurorachat
 cd aurorachat
 make
+make cia
+```
+
+Arch Linux or other distros with pacman:
+```sh
+sudo pacman -S 3ds-opusfile
+git clone https://github.com/mii-man/aurorachat
+cd aurorachat
+make
+make cia
+```
+
+Other Linux distros without pacman:
+```sh
+sudo dkp-pacman -S 3ds-opusfile
+git clone https://github.com/mii-man/aurorachat
+cd aurorachat
+make
+make cia
 ```
 
 (At least that's what I think you gotta do)
-
 
 ## checklist if it was evil
 - [X] basic chatting 
 - [X] awesome themes
 - [ ] awesome encryption
 - [X] account stuff
-- [ ] other stuff<!-- virt did account and sound stuff, its just not in release -->
+- [ ] other stuff
 - [X] sound stuff
 - [ ] advanced chating
-- [ ] and all the stuff that we forgot 
+- [ ] and all the stuff that we forgot
