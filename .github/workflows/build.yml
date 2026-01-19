@@ -49,19 +49,7 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
-      - name: Directory Listing
-        uses: gacts/directory-listing@v1.0.3
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v5.1.0
         with:
-          show-hidden: true
-          footer: Repository <a href="https://github.com/${{ github.repository }}">${{ github.repository }}</a> <p>"i hate my job" - cool-guy-awesome</p>
-      - name: stupid directory 
-        uses: actions/upload-artifact@v4
-        with:
-          name: i hate my job (temporary)
-          path: ./cia-builder/index.html
-      - name: stupid directory 
-        uses: actions/upload-artifact@v4
-        with:
-          name: i hate my job (temporary2)
-          path: ./index.html
-   
+          dotnet-version: 8.0
