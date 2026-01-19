@@ -25,8 +25,20 @@ jobs:
           make
           make cia
 
-      - name: Upload Build Artifact
+      - name: Upload 3DSX
         uses: actions/upload-artifact@v4
         with:
-          name: aurorachat Automatic Build (could be unfinished!)
+          name: aurorachat 3DSX Automatic Build (could be unfinished!)
           path: ./aurorachat.3dsx
+          
+      - name: Upload CIA
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurorachat 3DSX Automatic Build (could be unfinished!)
+          path: ./aurorachat.cia
+          
+      - name: Setup Java JDK
+        uses: actions/setup-java@v5.1.0
+        with:
+          distribution: zulu
+   
