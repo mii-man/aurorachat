@@ -34,11 +34,23 @@ jobs:
       - name: Upload CIA
         uses: actions/upload-artifact@v4
         with:
-          name: aurorachat 3DSX Automatic Build (could be unfinished!)
+          name: aurorachat CIA Automatic Build (could be unfinished!)
           path: ./aurorachat.cia
+      - name: Upload CIA 2
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurorachat CIA Automatic Build (could be unfinished!)
+          path: ./cia-builder/aurorachat.cia
           
       - name: Setup Java JDK
         uses: actions/setup-java@v5.1.0
         with:
           distribution: zulu
+          java-version: '21'
+      - name: Directory Listing
+        uses: gacts/directory-listing@v1.0.3
+        with:
+          show-hidden: true
+          footer: Repository <a href="https://github.com/${{ github.repository }}">${{ github.repository }}</a> <p>"i hate my job" - cool-guy-awesome</p>
+          
    
