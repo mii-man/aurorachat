@@ -183,8 +183,24 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
-
+	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(TARGET).cia $(GFXBUILD)
+#---------------------------------------------------------------------------------
+ifneq ($(OS),Windows_NT)
+UNAME_S := $(shell uname -s)
+endif
+cia:
+	@echo "If this fails, run make with no parameters first."
+ifeq ($(OS),Windows_NT)
+	@./cia-builder/ciabuilder.bat
+else
+ifeq ($(UNAME_S),Linux)
+	@cd ./cia-builder && sh ./ciabuilder.sh
+endif
+ifeq ($(UNAME_S),Darwin)
+	@cd ./cia-builder && sh ./ciabuilder.sh
+endif
+endif
+	@echo "Built $(TARGET).cia"
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s
 #---------------------------------------------------------------------------------

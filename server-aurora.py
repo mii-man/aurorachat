@@ -21,7 +21,7 @@ HOST = '0.0.0.0'
 PORT = 8961
 RATE_LIMIT_MS = 1999  # one more millisecond of grace
 MAX_MESSAGE_LENGTH = 456  # holy yappery
-TERMINATION_TRIGGER = "<Fleetway>"
+TERMINATION_TRIGGER = "Fleetway"
 
 # --- Global State ---
 clients = []
@@ -69,9 +69,9 @@ def process_chat_message(client, message, client_ip):
                 client.sendall(b"no doxxers here")
             except Exception:
                 pass
-            print("IP or previous doxxer Fleetway detected in chat message")
+            print("lmaooo bad name or IP detected get this guy OUT")
             raise ConnectionResetError(
-                "IP address detected in chat message or previous doxxer Fleetway detected"
+                "IP address detected in chat message or bad name detected"
             )
 
     if len(message_strip) > MAX_MESSAGE_LENGTH:
@@ -101,6 +101,12 @@ def process_chat_message(client, message, client_ip):
             message_content = censored_msg[len("CHAT,"):]
             broadcast(f"<{client.username}>: {message_content}\n")
             print(f"Received: {message_strip} and broadcasted {message_content}")
+
+    if message_strip.startswith("BOTCHAT,"):
+        if (client.logged_in == True):
+            message_content = censored_msg[len("BOTCHAT,"):]
+            broadcast(f"[{client.username}]: {message_content}\n")
+            print(f"Received: {message_strip} from bot and broadcasted {message_content}")
 
     if message_strip.startswith("MAKEACC,"):
         parts = message_strip.split(",")

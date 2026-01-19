@@ -5,7 +5,6 @@
 *.o
 *.ko
 *.obj
-*.elf
 
 # Linker output
 *.ilk
@@ -28,17 +27,14 @@
 *.so.*
 *.dylib
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-*.3dsx
+# Build stuff
+build/
 *.cia
 *.icn
 *.bnr
+*.smdh
+*.3dsx
+*.elf
 
 # Debug files
 *.dSYM/
@@ -63,3 +59,9 @@ dkms.conf
 .ssh
 .bash_history
 .my_name_is_the_fucking_mimic_oh_yeah
+# SSL files
+*.pem
+*.key
+# my copy of siivagunner king for another day
+*.mp3
+*.mp4
