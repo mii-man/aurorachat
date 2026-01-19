@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    container: devkitpro/devkitarm:latest
+    container: ghcr.io/cool-guy-awesome/devkitarm-wine-docker:latest
 
     steps:
       - name: Checkout code
