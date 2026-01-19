@@ -184,6 +184,8 @@ endif
 clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(TARGET).cia $(GFXBUILD)
+	@cd cia-builder
+	@rm -fr icon.icn banner.bnr
 #---------------------------------------------------------------------------------
 ifneq ($(OS),Windows_NT)
 UNAME_S := $(shell uname -s)
