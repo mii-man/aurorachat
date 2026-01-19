@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aurorachat CIA Automatic Build (could be unfinished!)
-          path: ./cia-builder/aurorachat.cia
+          path: ./aurorachat.cia
           
       - name: Setup Java JDK
         uses: actions/setup-java@v5.1.0
