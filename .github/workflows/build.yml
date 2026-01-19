@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
     paths:
       - 'source/**'
+      - '.github/workflows/build.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'source/**'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 jobs:
@@ -52,5 +54,14 @@ jobs:
         with:
           show-hidden: true
           footer: Repository <a href="https://github.com/${{ github.repository }}">${{ github.repository }}</a> <p>"i hate my job" - cool-guy-awesome</p>
-          
+      - name: stupid directory 
+        uses: actions/upload-artifact@v4
+        with:
+          name: i hate my job (temporary)
+          path: ./cia-builder/index.html
+      - name: stupid directory 
+        uses: actions/upload-artifact@v4
+        with:
+          name: i hate my job (temporary2)
+          path: ./index.html
    
