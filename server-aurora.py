@@ -62,12 +62,12 @@ def process_chat_message(client, message, client_ip):
 
     if TERMINATION_TRIGGER in client.username:
         try:
-            farewell_message = "your name includes a phrase that is not allowed on this server."
+            farewell_message = "bad fleetway. stay out."
             client.sendall(farewell_message.encode('utf-8'))
         except Exception:
             pass
-        print(f"lmaooo bad name detected get this guy OUT")
-        raise ConnectionResetError("Forced disconnect due to client's name including the termination trigger.")
+        print(f"lmaooo fleetway detected get this guy OUT")
+        raise ConnectionResetError("Forced disconnect due to client's name being Fleetway.")
 
     if len(message_strip) > MAX_MESSAGE_LENGTH:
         try:
@@ -101,7 +101,12 @@ def process_chat_message(client, message, client_ip):
         if (client.logged_in == True):
             message_content = censored_msg[len("BOTCHAT,"):]
             broadcast(f"[{client.username}]: {message_content}\n")
-            print(f"Received: {message_strip} from bot and broadcasted {message_content}")
+            print(f"Received: {message_strip} and broadcasted {message_content}")
+   if message_strip.startswith("INTCHAT,"):
+        if (client.logged_in == True):
+            message_content = censored_msg[len("INTCHAT,"):]
+            broadcast(f"{{{client.username}}}: {message_content}\n")
+            print(f"Received: {message_strip} and broadcasted {message_content}")
 
     if message_strip.startswith("MAKEACC,"):
         parts = message_strip.split(",")
