@@ -62,12 +62,12 @@ def process_chat_message(client, message, client_ip):
 
     if TERMINATION_TRIGGER in client.username:
         try:
-            farewell_message = "bad fleetway. stay out."
+            farewell_message = "your name includes a phrase that is not allowed on this server."
             client.sendall(farewell_message.encode('utf-8'))
         except Exception:
             pass
-        print(f"lmaooo fleetway detected get this guy OUT")
-        raise ConnectionResetError("Forced disconnect due to client's name being Fleetway.")
+        print(f"lmaooo bad name detected get this guy OUT")
+        raise ConnectionResetError("Forced disconnect due to client's name including the termination trigger.")
 
     if len(message_strip) > MAX_MESSAGE_LENGTH:
         try:
