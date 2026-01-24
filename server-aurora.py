@@ -101,7 +101,12 @@ def process_chat_message(client, message, client_ip):
         if (client.logged_in == True):
             message_content = censored_msg[len("BOTCHAT,"):]
             broadcast(f"[{client.username}]: {message_content}\n")
-            print(f"Received: {message_strip} from bot and broadcasted {message_content}")
+            print(f"Received: {message_strip} and broadcasted {message_content}")
+   if message_strip.startswith("INTCHAT,"):
+        if (client.logged_in == True):
+            message_content = censored_msg[len("INTCHAT,"):]
+            broadcast(f"{{{client.username}}}: {message_content}\n")
+            print(f"Received: {message_strip} and broadcasted {message_content}")
 
     if message_strip.startswith("MAKEACC,"):
         parts = message_strip.split(",")
