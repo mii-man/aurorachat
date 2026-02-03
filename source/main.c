@@ -1,7 +1,6 @@
 // aurorachat
 // Authored by mii-man, Virtualle, cool-guy-awesome, ItsFuntum, and manti-09.
 // NOTE: You CANNOT use swkbd while rendering! So don't! Otherwise you'll create the stupidest crash in history!
-// aurorachat 4 hehehehhahahah
 
 #include <3ds.h>
 #include <stdio.h>
@@ -9,7 +8,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <malloc.h>
-#include <opusfile.h> // apparently this didnt mess with the compilation it was just a warning for me -.-
+#include <opusfile.h>
 
 #include <3ds/applets/swkbd.h>
 
@@ -42,7 +41,7 @@ bool switched = false;
 
 
 
-// imagine audioing, couldnt be auditorial, coudio we
+
 
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
@@ -137,8 +136,6 @@ bool isSpriteTapped(C2D_Sprite* sprite, float scaleX, float scaleY) {
 
 
 
-// intentional
-// haha
 
 
 
