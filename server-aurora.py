@@ -1,4 +1,4 @@
-import socket
+from flask import Flask, jsonify, request
 import threading
 import time
 import sys
@@ -6,15 +6,51 @@ from better_profanity import profanity
 import os.path
 import os
 import bcrypt
+import hashlib
+import threading
+import socket
+from flask import session, redirect, url_for
 
-# Get directory of the auroraserver file
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ACCOUNT_DIR = os.path.join(SCRIPT_DIR, "accounts")
 
-os.makedirs(ACCOUNT_DIR, exist_ok=True)
+# -- TCP Sockets --
+tcp_clients = []
 
-# Initialize the profanity filter
-profanity.load_censor_words()
+def broadcast(message):
+    for client in tcp_clients[:]:
+        try:
+            client.sendall(message.encode('utf-8'))
+        except:
+            tcp_clients.remove(client)
+
+def handle_tcp_client(client_socket):
+    try:
+        while True:
+            data = client_socket.recv(1024)
+            if not data:
+                break
+    except:
+        pass
+    finally:
+        if client_socket in tcp_clients:
+            tcp_clients.remove(client_socket)
+        client_socket.close()
+
+def start_tcp_server():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(('0.0.0.0', 4040))
+    server.listen(5)
+    print("AuroraTCP running on port 4040")
+
+    while True:
+        client_sock, addr = server.accept()
+        print("Client connected through TCP")
+        tcp_clients.append(client_sock)
+        t = threading.Thread(target=handle_tcp_client, args=(client_sock,), daemon=True)
+        t.start()
+
+# Start TCP server in background so that the Flask server doesn't explode
+threading.Thread(target=start_tcp_server, daemon=True).start()
 
 # --- Configuration ---
 HOST = '0.0.0.0'
@@ -24,236 +60,232 @@ MAX_MESSAGE_LENGTH = 456  # holy yappery
 TERMINATION_TRIGGER = "Fleetway"
 
 # --- Global State ---
-clients = []
+clients = {}
 rate_limit = {}
 connection_times = {}
+latestMsg = ""
+msg_lock = threading.Lock()
 
+# Account file init
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ACCOUNT_DIR = os.path.join(SCRIPT_DIR, "accounts")
+BANNEDUSR_DIR = os.path.join(SCRIPT_DIR, "bannedusers")
+ADMIN_DIR = os.path.join(SCRIPT_DIR, "admins")
+
+os.makedirs(ACCOUNT_DIR, exist_ok=True)
+os.makedirs(BANNEDUSR_DIR, exist_ok=True)
+os.makedirs(ADMIN_DIR, exist_ok=True)
+
+# Profanity init
+profanity.load_censor_words()
+
+app = Flask(__name__)
+
+app.secret_key = "put a random key here"
 
 # --- Helper Functions ---
+def sha256(data):
+      sha256Obj = hashlib.sha256(data.encode('utf-8'))
+      finalHash = sha256Obj.hexdigest()
+      return finalHash
+
 class Client:
-    def __init__(self, sock):
-        self.socket = sock
-        self.username = None
-        self.logged_in = False
+      def __init__(self):
+            self.username = None
+            self.loggedin = False
 
-    def sendall(self, data):
-        self.socket.sendall(data)
-
-    def close(self):
-        self.socket.close()
-
-    def fileno(self):
-        return self.socket.fileno()
-
-    def __getattr__(self, attr):
-        return getattr(self.socket, attr)
-
-
-def process_chat_message(client, message, client_ip):
-    SERVER_IPS = {"104.236.25.60"}  # Server IP (these can be public but any admin's IPs cannot) if one of these goes rogue then remove them from this list and restart the aurorachat server.
-
-    message_strip = message.strip()
-    if not message_strip:
-        return
-
-    if client_ip in SERVER_IPS:
-        broadcast(f"{message_strip}\n")
-        return
-
-    if TERMINATION_TRIGGER in client.username:
-        try:
-            farewell_message = "your name includes a phrase that is not allowed on this server."
-            client.sendall(farewell_message.encode('utf-8'))
-        except Exception:
-            pass
-        print(f"lmaooo bad name detected get this guy OUT")
-        raise ConnectionResetError("Forced disconnect due to client's name including the termination trigger.")
-
-    if len(message_strip) > MAX_MESSAGE_LENGTH:
-        try:
-            reject_message = f'Message too large! Max length is {MAX_MESSAGE_LENGTH} characters.\n'
-            client.sendall(reject_message.encode('utf-8'))
-        except Exception:
-            pass
-        return
-
-    now = int(time.time() * 1000)
-    last_msg = rate_limit.get(client, 0)
-    if now - last_msg < RATE_LIMIT_MS:
-        try:
-            client.sendall('Spam detected! Wait 2 seconds.\n'.encode('utf-8'))
-        except Exception:
-            pass
-        return
-
-    rate_limit[client] = now
-
-    censored_msg = profanity.censor(message_strip, '*')
-    print(f"Message Processed: {repr(censored_msg)[1:-1]}")
-
-    if message_strip.startswith("CHAT,"):
-        if (client.logged_in == True):
-            message_content = censored_msg[len("CHAT,"):]
-            broadcast(f"<{client.username}>: {message_content}\n")
-            print(f"Received: {message_strip} and broadcasted {message_content}")
-
-    if message_strip.startswith("BOTCHAT,"):
-        if (client.logged_in == True):
-            message_content = censored_msg[len("BOTCHAT,"):]
-            broadcast(f"[{client.username}]: {message_content}\n")
-            print(f"Received: {message_strip} and broadcasted {message_content}")
-   if message_strip.startswith("INTCHAT,"):
-        if (client.logged_in == True):
-            message_content = censored_msg[len("INTCHAT,"):]
-            broadcast(f"{{{client.username}}}: {message_content}\n")
-            print(f"Received: {message_strip} and broadcasted {message_content}")
-
-    if message_strip.startswith("MAKEACC,"):
-        parts = message_strip.split(",")
-        if len(parts) >= 3:
-            username = parts[1].strip()
-            password = parts[2].strip()
+# --- Command Parsing ---
+def makeAccount(client,data):
+      if all(key in data for key in ['username','password']): # Make sure username and password exist
+            username = data['username']
+            password = data['password']
             filepath = os.path.join(ACCOUNT_DIR, username)
             if not os.path.exists(filepath):
-                client.sendall("USR_CREATED".encode('utf-8'))
-                hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-                with open(filepath, 'wb') as f: # welcome back ahh
-                    f.write(hashed)
-                print("Account created what a W")
-                client.sendall("USR_CREATED".encode('utf-8'))
+                  hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+                  with open(filepath, 'wb') as f: # welcome back ahh
+                        f.write(hashed)
+                  print("Account created what a W")
+                  return {'data':"USR_CREATED"}
             else:
-                client.sendall("USR_IN_USE".encode('utf-8')) # random but it only works with this here most of the time??? idk why
-                print("Account exists bro get out")
-                client.sendall("USR_IN_USE".encode('utf-8'))
+                  return {'data':"USR_IN_USE"}
+                  print("Account exists bro get out")
 
-    if message_strip.startswith("LOGINACC,"):
-        parts = message_strip.split(",")
-        if len(parts) >= 3:
-            username = parts[1].strip()
-            password = parts[2].strip()
-            filepath = os.path.join(ACCOUNT_DIR, username)
-            if os.path.exists(filepath):
-                with open(filepath, 'rb') as f:
-                    stored_hash = f.read()
-                if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
-                    print("User logged in!")
-                    client.username = username
-                    client.logged_in = True
-                    client.sendall("LOGIN_OK".encode('utf-8'))
-                else:
-                    print("Invalid password.")
-                    client.sendall("LOGIN_WRONG_PASS".encode('utf-8'))
+def loginAccount(client,data):
+      if all(key in data for key in ['username','password']): # Make sure username and password exist
+            username = data['username']
+            password = data['password']
+            if TERMINATION_TRIGGER in username:
+                  try:
+                        return {'data':TERMINATION_TRIGGER.lower()}
+                  except Exception:
+                        pass
+                  print(f"lmaooo {TERMINATION_TRIGGER.lower()} detected get this guy OUT")
+                  raise ConnectionResetError(f"Forced disconnect due to client's name being {username}.")
+            filepath2 = os.path.join(BANNEDUSR_DIR, username)
+            if not os.path.exists(filepath2):
+                  filepath = os.path.join(ACCOUNT_DIR, username)
+                  if os.path.exists(filepath):
+                        with open(filepath, 'rb') as f:
+                              stored_hash = f.read()
+                        if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+                              print("User logged in!")
+                              client.username = username
+                              client.loggedin = True
+                              return {'data':"LOGIN_OK"}
+                        else:
+                              print("Invalid password.")
+                              return {'data':"LOGIN_WRONG_PASS"}
+                  else:
+                        print("Account not found.")
+                        return {'data':"LOGIN_FAKE_ACC"}
             else:
-                print("Account not found.")
-                client.sendall("LOGIN_FAKE_ACC".encode('utf-8'))
-    
-    if message_strip.startswith("LOGGEDIN?"):
-        client.sendall(str(client.logged_in).encode('utf-8'))
+                 print("you're BANNED. LOSER")
+                 return {'data':"frick you you're BANNED"}
 
-    # This exists to help prevent old clients from insecurely connecting and also helps block spammers
-    if not any(message_strip.startswith(cmd) for cmd in ["CHAT,", "MAKEACC,", "LOGINACC,", "LOGGEDIN?"]):
-        try:
-            farewell_message = "Your client is outdated. Update to use aurorachat."
-            client.sendall(farewell_message.encode('utf-8'))
-        except Exception:
-            pass
-        print(f"they're old")
-        raise ConnectionResetError("Forced disconnect due to outdated client.")
+def processMessage(client,data):
+      global latestMsg
+      if (client.loggedin):
 
+            filepath2 = os.path.join(BANNEDUSR_DIR, client.username)
+            if os.path.exists(filepath2):
+                 return {'data':"youre BANNED, LOSER"}
 
-def broadcast(message):
-    sockets_to_remove = []
-    for client in clients:
-        try:
-            client.sendall(message.encode('utf-8'))
-        except socket.error:
-            sockets_to_remove.append(client)
-        except Exception:
-            sockets_to_remove.append(client)
-    for client in sockets_to_remove:
-        remove_client(client)
+            if data['cmd'] == "CHAT":
+                  typeIdentifier = "<>"
+            elif data['cmd'] == "BOTCHAT":
+                  typeIdentifier = "[]"
+            elif data['cmd'] == "INTCHAT":
+                  typeIdentifier = "{}"
+            usernameWithIdentifier = f"{typeIdentifier[0]}{client.username}{typeIdentifier[1]}"
+            censored_msg = profanity.censor(data['content'].strip(), '*')
+            if data['content'].startswith('/ban '):
+                  parts = data['content'].split(' ', 1)
+                  username_to_ban = parts[1].strip()
 
+                  filepath3 = os.path.join(ADMIN_DIR, client.username)
+                  if not os.path.exists(filepath3):
+                       return {'data':"not admin"}
 
-def remove_client(client):
-    if client in clients:
-        clients.remove(client)
-    if client in rate_limit:
-        del rate_limit[client]
-    try:
-        client.close()
-    except Exception:
-        pass
-    print(f"Some sort of 'client' seems to have 'disconnected.'")
+                  filepath = os.path.join(ACCOUNT_DIR, username_to_ban)
+                  if os.path.exists(filepath):
+                        with open(os.path.join(BANNEDUSR_DIR, username_to_ban), 'w') as f:
+                              f.write('banned')
+            
+            if data['content'].startswith('/unban '):
+                  parts = data['content'].split(' ', 1)
+                  username_to_ban = parts[1].strip()
 
+                  filepath3 = os.path.join(ADMIN_DIR, client.username)
+                  if not os.path.exists(filepath3):
+                       return {'data':"not admin"}
 
-def handle_client(client_socket, client_address):
-    client = Client(client_socket)
-    client_ip = client_address[0]
-    now_ms = int(time.time() * 1000)
-    last_connection = connection_times.get(client_ip, 0)
-    if now_ms - last_connection < RATE_LIMIT_MS:
-        try:
-            client.close()
-        except Exception:
-            pass
-        return
-    connection_times[client_ip] = now_ms
+                  filepath = os.path.join(ACCOUNT_DIR, username_to_ban)
+                  if os.path.exists(filepath):
+                        os.remove(os.path.join(BANNEDUSR_DIR, username_to_ban))
+            now = int(time.time() * 1000)
+            last_msg = rate_limit.get(client, 0)
+            if now - last_msg < RATE_LIMIT_MS:
+                  return {'data':"SPAM",'limit':str(RATE_LIMIT_MS)}
+            rate_limit[client] = now
+            if len(censored_msg) > MAX_MESSAGE_LENGTH:
+                  return {'data':"TOOLONG",'limit':str(MAX_MESSAGE_LENGTH)}
+            latestMsg = f"{usernameWithIdentifier}: {data['content']}\n"
+            print(f"Received: {data} and parsed {censored_msg}")
+            broadcast(f"{usernameWithIdentifier}: {censored_msg}\n")
+            return {'data':"MSG_SENT"}
+      else:
+            return {'data':"NO_LOGIN"}
 
-    clients.append(client)
-    print(f"Client connection established.")
+# --- Client Handling ---
+def handleClient(address):
+      filepath = os.path.join(BANNEDUSR_DIR, address)
+      if not os.path.exists(filepath):
+            client = Client()
+            now_ms = int(time.time() * 1000)
+            last_connection = connection_times.get(address, 0)
+            if now_ms - last_connection < RATE_LIMIT_MS:
+                  try:
+                        with open(filepath, 'wb') as f:
+                              f.write("Too many connections at once")
+                  except Exception:
+                        pass
+                  return
+            connection_times[address] = now_ms
+            clients[address] = client
+            print("Client connection established.")
+            return {'data':"CONNECT_OK"}
+      else:
+            print("A banned user tried to log in.")
+            return {'data':"BANNED"}
 
-    try:
-        buffer = ""
-        while True:
-            data = client.recv(4096)
-            if not data:
-                break
-            received_chunk = data.decode('utf-8', errors='ignore')
-            buffer += received_chunk
-            message_to_process = buffer.strip()
-            buffer = ""
-            if message_to_process:
-                process_chat_message(client, message_to_process, client_ip)
-    except ConnectionResetError:
-        print("Connection error from someplace: Connection reset or forced disconnect.")
-    except socket.timeout:
-        print("Connection error from something: Timeout.")
-    except Exception as err:
-        print(f"Connection error from... you tell me because I forgot. OOOH I FORGOT I FORGOT I FORGOT I FORGOT I FORGOT: {err}", file=sys.stderr)
-    finally:
-        remove_client(client)
-
+@app.route('/api')
+def error405():
+      return "Please use POST instead.", 405
 
 # --- Main Server Logic ---
-def start_server():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-        server.bind((HOST, PORT))
-        server.listen(5)
-    except Exception as e:
-        print(f"Could not bind to port {PORT}: {e}", file=sys.stderr)
-        sys.exit(1)
-    print(f'auroraserver v0.0.4 running on port {PORT}.')
 
-    while True:
-        try:
-            client_socket, client_address = server.accept()
-            client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address))
-            client_handler.daemon = True
-            client_handler.start()
-        except KeyboardInterrupt:
-            print("\nShutting down server...")
-            server.close()
-            for client in clients:
-                try:
-                    client.close()
-                except Exception:
-                    pass
-            sys.exit(0)
-        except Exception as e:
-            print(f"Server error: {e}", file=sys.stderr)
+@app.route('/api', methods=['POST'])
+def process_request():
+    global latestMsg
+    request_json = request.get_json(silent=True)
+    if not request_json:
+      print(request.data)
+      return {'data': 'NO_JSON'}, 400
+    if request_json['cmd'] == "CONNECT":
+        response = handleClient(sha256(request.remote_addr))
+    elif request_json['cmd'] == "MAKEACC":
+        response = makeAccount(clients[sha256(request.remote_addr)], request_json)
+    elif request_json['cmd'] == "LOGINACC":
+        response = loginAccount(clients[sha256(request.remote_addr)], request_json)
+    elif request_json['cmd'] in ["CHAT", "BOTCHAT", "INTCHAT"]:
+        response = processMessage(clients[sha256(request.remote_addr)], request_json)
+    else:
+        print("Command not recognized.")
+        response = {'data': "BADCMD"}
+    return response
+
+
+
+
+# This panel is simple and untested. I wouldn't suggest using it. Set a cryptographically random password so it can't be cracked.
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        if request.form['password'] == 'password here':
+            session['admin'] = True
+            return redirect('/admin')
+        return 'Invalid password', 401
+    return '''
+    <form method="POST">
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+    '''
+
+@app.route('/admin')
+def admin():
+    if not session.get('admin'):
+        return redirect('/admin/login')
+    return '''
+    <form method="POST" action="/ban">
+        <input name="username" placeholder="Username to ban" required>
+        <button>Ban User</button>
+    </form>
+    '''
+
+@app.route('/ban', methods=['POST'])
+def ban_user():
+    if not session.get('admin'):
+        return 'Unauthorized', 403
+    username = request.form['username']
+    with open(os.path.join(BANNEDUSR_DIR, username), 'w') as f:
+        f.write('banned')
+    return redirect('/admin')
+
+
+
 
 
 if __name__ == "__main__":
-    start_server()
+      app.run(host="0.0.0.0", port=3072, threaded=True, use_reloader=False)
