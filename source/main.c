@@ -1,47 +1,314 @@
-// aurorachat
-// Authored by mii-man, Virtualle, cool-guy-awesome, ItsFuntum, and manti-09.
-// NOTE: You CANNOT use swkbd while rendering! So don't! Otherwise you'll create the stupidest crash in history!
+/*
+                                       _           _   
+                                      | |         | |  
+   __ _ _   _ _ __ ___  _ __ __ _  ___| |__   __ _| |_ 
+  / _` | | | | '__/ _ \| '__/ _` |/ __| '_ \ / _` | __|
+ | (_| | |_| | | | (_) | | | (_| | (__| | | | (_| | |_ 
+  \__,_|\__,_|_|  \___/|_|  \__,_|\___|_| |_|\__,_|\__|                    
+             __  __     __  ______ __     
+            |__)|_ |  ||__)| |  | |_ |\ | 
+            | \ |__|/\|| \ | |  | |__| \| 
+                              
+
+    Project initialized and owned by: mii-man
+    Lead Developer: Virtualle / VirtuallyExisting
+    Server Developed by: hackertron and Orstando
+    Music by: Virtualle, manti-09
+    Commentary by: Virtualle
+
+
+
+
+    This project was inspired by hbchat, a project created by Virtualle in October 2025, the project collapsed due to a doxxing that had 4 victims.
+
+
+    Aurorachat is designed to remove the flawed, tangled mess of bugs and exploits that were in hbchat and make something that will inspire many and grow a community once more.
+
+
+
+
+
+    This code is owned underneath the license given with the project, if you are to distribute this code the license is required to be with the code.
+    
+
+
+    This is a rewrite of the original aurorachat, remade to use aurorahttp by Orstando and to have much better choices. The comment you've just read was created by VirtuallyExisting / Virtualle, have a good day!
+
+
+*/
+
+
+
+
+
+
+
 
 #include <3ds.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include <stdlib.h>
+#include <citro2d.h>
 #include <malloc.h>
 #include <opusfile.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 #include <3ds/applets/swkbd.h>
 
-#include <citro2d.h>
+/*
 
-u32 __stacksize__ = 0x100000; // 1 MB
+    HTTP(S) Functions
+    Coded by: Virtualle
+    Extra credit: devKitPro examples
 
-
-
-
-
-C2D_TextBuf sbuffer;
-C2D_Text stext;
-
-C2D_TextBuf chatbuffer;
-C2D_Text chat;
-
-char chatstring[6000] = "-chat-";
-char usernameholder[64];
-
-float chatscroll = 20;
-
-int scene = 1;
-
-bool inacc = false;
-
-int theme = 8;
-
-bool switched = false;
+*/
 
 
+u32 size;
+u32 siz;
+
+u32 bw;
+
+u8 *buf;
+
+volatile bool downloadDone;
+
+typedef struct {
+    char* data;
+    size_t len;
+    size_t cap;
+} cstring;
+
+cstring cstr_new(const char* str) {
+    cstring s = {0};
+    if (str) {
+        s.len = strlen(str);
+        s.cap = s.len + 1;
+        s.data = malloc(s.cap);
+        if (s.data) strcpy(s.data, str);
+    }
+    return s;
+}
+
+void cstr_free(cstring* s) {
+    if (s->data) free(s->data);
+    s->data = NULL;
+    s->len = s->cap = 0;
+}
+
+bool CHECK_RESULT(const char* name, Result res) {
+    bool failed = R_FAILED(res);
+    printf("%s: %s! (0x%08lX)\n", name, failed ? "failed" : "success", res);
+    return failed;
+}
+
+bool download(const char* url_str, const char* path) {
+    httpcContext context;
+    u32 status = 0;
+    cstring url = cstr_new(url_str);
+    downloadDone = false;
+    bool success = false;
+
+    while (true) {
+        if (CHECK_RESULT("httpcOpenContext", httpcOpenContext(&context, HTTPC_METHOD_GET, url.data, 0))) goto cleanup;
+        if (CHECK_RESULT("httpcSetSSLOpt",   httpcSetSSLOpt(&context, SSLCOPT_DisableVerify))) goto close;
+        if (CHECK_RESULT("httpcSetKeepAlive", httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED))) goto close;
+        if (CHECK_RESULT("httpcAddRequestHeaderField", httpcAddRequestHeaderField(&context, "User-Agent", "skibidi toilet"))) goto close;
+        if (CHECK_RESULT("httpcAddRequestHeaderField", httpcAddRequestHeaderField(&context, "Connection", "Keep-Alive"))) goto close;
+
+        if (CHECK_RESULT("httpcBeginRequest", httpcBeginRequest(&context))) goto close;
+
+        if (CHECK_RESULT("httpcGetResponseStatusCode", httpcGetResponseStatusCode(&context, &status))) goto close;
+
+        if ((status >= 301 && status <= 303) || (status >= 307 && status <= 308)) {
+            char newurl[0x1000];
+            if (CHECK_RESULT("httpcGetResponseHeader", httpcGetResponseHeader(&context, "Location", newurl, sizeof(newurl)))) goto close;
+            cstr_free(&url);
+            url = cstr_new(newurl);
+            httpcCloseContext(&context);
+            continue;
+        }
+        break;
+    }
+
+    if (status != 200) goto close;
+
+    if (CHECK_RESULT("httpcGetDownloadSizeState", httpcGetDownloadSizeState(&context, NULL, &siz))) goto close;
+
+    FS_Archive sdmcRoot;
+    if (CHECK_RESULT("FSUSER_OpenArchive", FSUSER_OpenArchive(&sdmcRoot, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, "")))) goto close;
+
+    Handle fileHandle;
+    FS_Path filePath = fsMakePath(PATH_ASCII, path);
+    if (CHECK_RESULT("FSUSER_OpenFile", FSUSER_OpenFile(&fileHandle, sdmcRoot, filePath, FS_OPEN_CREATE | FS_OPEN_READ | FS_OPEN_WRITE, FS_ATTRIBUTE_ARCHIVE))) {
+        FSUSER_CloseArchive(sdmcRoot);
+        goto close;
+    }
+
+    if (CHECK_RESULT("FSFILE_SetSize", FSFILE_SetSize(fileHandle, 0))) {
+        FSFILE_Close(fileHandle);
+        FSUSER_CloseArchive(sdmcRoot);
+        goto close;
+    }
+
+    u8* data = malloc(0x4000);
+    if (!data) {
+        FSFILE_Close(fileHandle);
+        FSUSER_CloseArchive(sdmcRoot);
+        goto close;
+    }
+
+    bw = 0;
+    u32 readSize;
+    Result ret;
+
+    do {
+        ret = httpcDownloadData(&context, data, 0x4000, &readSize);
+        if (readSize > 0) {
+            FSFILE_Write(fileHandle, NULL, bw, data, readSize, FS_WRITE_FLUSH);
+            bw += readSize;
+        }
+    } while (ret == HTTPC_RESULTCODE_DOWNLOADPENDING);
+
+    success = (ret == 0);
+
+    FSFILE_Close(fileHandle);
+    FSUSER_CloseArchive(sdmcRoot);
+
+close:
+    httpcCloseContext(&context);
+cleanup:
+    free(data);
+    cstr_free(&url);
+    downloadDone = true;
+    return success;
+}
+
+void downloadThreadFunc(void* arg) {
+    char** args = (char**)arg;
+    char* url = args[0];
+    char* path = args[1];
+
+    download(url, path);
+
+    free(url);
+    free(path);
+    free(args);
+}
+
+Thread startDownload(const char* url, const char* path) {
+    char** args = malloc(2 * sizeof(char*));
+    args[0] = strdup(url);
+    args[1] = strdup(path);
+
+    Thread thread = threadCreate(downloadThreadFunc, args, 0x8000, 0x38, -2, false);
+    if (thread == NULL) {
+        printf("Failed to create thread!\n");
+        free(args[0]); free(args[1]); free(args);
+    }
+    return thread;
+}
 
 
+
+
+Result http_post(const char* url, const char* data) {
+    Result ret = 0;
+    httpcContext context;
+    char *newurl = NULL;
+    u32 statuscode = 0;
+    u32 contentsize = 0, readsize = 0, size = 0;
+    buf = NULL;
+    u8 *lastbuf = NULL;
+    char length[256];
+    int contentlength;
+
+    do {
+        ret = httpcOpenContext(&context, HTTPC_METHOD_POST, url, 0);
+        if (ret != 0) break;
+
+        ret = httpcSetSSLOpt(&context, SSLCOPT_DisableVerify);
+        if (ret != 0) break;
+
+        ret = httpcSetKeepAlive(&context, HTTPC_KEEPALIVE_ENABLED);
+        if (ret != 0) break;
+
+        ret = httpcAddRequestHeaderField(&context, "User-Agent", "skibidi toilet");
+        if (ret != 0) break;
+
+        ret = httpcAddRequestHeaderField(&context, "Content-Type", "application/json");
+        if (ret != 0) break;
+
+        contentlength = strlen(data);
+        sprintf(length, "%d", contentlength);
+
+        ret = httpcAddRequestHeaderField(&context, "Content-Length", length);
+        if (ret != 0) break;
+
+        ret = httpcAddPostDataRaw(&context, (u32*)data, strlen(data));
+        if (ret != 0) break;
+
+        ret = httpcBeginRequest(&context);
+        if (ret != 0) break;
+
+        ret = httpcGetResponseStatusCode(&context, &statuscode);
+        if (ret != 0) break;
+
+        // Handle redirects
+        if ((statuscode >= 301 && statuscode <= 303) || (statuscode >= 307 && statuscode <= 308)) {
+            if (newurl == NULL) newurl = malloc(0x1000);
+            if (newurl == NULL) { ret = -1; break; }
+
+            ret = httpcGetResponseHeader(&context, "Location", newurl, 0x1000);
+            url = newurl;
+            httpcCloseContext(&context);
+            continue;
+        }
+
+        if (statuscode != 200) {
+            printf("HTTP Error: %x\n", statuscode);
+            ret = -2;
+            break;
+        }
+
+        ret = httpcGetDownloadSizeState(&context, NULL, &contentsize);
+        if (ret != 0) break;
+
+        buf = (u8*)malloc(0x1000);
+        if (buf == NULL) { ret = -1; break; }
+
+        do {
+            ret = httpcDownloadData(&context, buf + size, 0x1000, &readsize);
+            size += readsize;
+            if (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING) {
+                lastbuf = buf;
+                buf = realloc(buf, size + 0x1000);
+                if (buf == NULL) { free(lastbuf); ret = -1; break; }
+            }
+        } while (ret == (s32)HTTPC_RESULTCODE_DOWNLOADPENDING);
+
+        if (ret == 0) {
+            buf = realloc(buf, size); // Resize to actual size
+            printf("Response: %s\n", buf);
+        }
+
+    } while(0);
+
+    if (newurl) free(newurl);
+    httpcCloseContext(&context);
+    return ret;
+}
+
+
+/*
+
+    VCOI (Virtualle's Custom Opus Implementation)
+    Coded by: Virtualle
+    Extra Credit: libopusfile, devKitPro    
+
+
+*/
 
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
@@ -59,10 +326,51 @@ bool fillBuffer(OggOpusFile *file, ndspWaveBuf *buf) {
     while (total < SAMPLES_PER_BUF) {
         int16_t *ptr = buf->data_pcm16 + (total * CHANNELS);
         int ret = op_read_stereo(file, ptr, (SAMPLES_PER_BUF - total) * CHANNELS);
-        if (ret <= 0) break;
+        
+        if (ret <= 0) {
+            // End of stream or error — try to loop
+            if (ret == OP_HOLE || ret == OPUS_INVALID_PACKET) {
+                continue; // Skip invalid data, keep reading
+            }
+            // Attempt to seek to beginning of stream
+            if (op_pcm_seek(file, 0) < 0) {
+                break; // Failed to seek — can't loop
+            }
+            // After seeking, try to read again
+            continue;
+        }
         total += ret;
     }
-    if (total == 0) return false;
+
+    if (total == 0) return false; // No data filled (failed to recover)
+
+    buf->nsamples = total;
+    DSP_FlushDataCache(buf->data_pcm16, total * CHANNELS * sizeof(int16_t));
+    ndspChnWaveBufAdd(0, buf);
+    return true;
+}
+
+bool fillBufferNoLoop(OggOpusFile *file, ndspWaveBuf *buf) {
+    int total = 0;
+    while (total < SAMPLES_PER_BUF) {
+        int16_t *ptr = buf->data_pcm16 + (total * CHANNELS);
+        int ret = op_read_stereo(file, ptr, (SAMPLES_PER_BUF - total) * CHANNELS);
+        
+        if (ret <= 0) {
+            // End of stream or error — try to loop
+            if (ret == OP_HOLE || ret == OPUS_INVALID_PACKET) {
+                continue; // Skip invalid data, keep reading
+            }
+            // Attempt to seek to beginning of stream
+            break; // Failed to seek — can't loop
+            // After seeking, try to read again
+            continue;
+        }
+        total += ret;
+    }
+
+    if (total == 0) return false; // No data filled (failed to recover)
+
     buf->nsamples = total;
     DSP_FlushDataCache(buf->data_pcm16, total * CHANNELS * sizeof(int16_t));
     ndspChnWaveBufAdd(0, buf);
@@ -87,23 +395,70 @@ void audioThread(void *arg) {
     return;
 }
 
+typedef struct {
+    OggOpusFile* file;
+    bool quit;
+} AudioThreadData;
 
+void audioThreadFunc(void* arg) {
+    AudioThreadData* data = (AudioThreadData*)arg;
 
+    ndspChnReset(0);
+    ndspChnSetRate(0, 48000);
+    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
+    ndspSetCallback(audioCallback, NULL);
 
-// function time
-
-void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u32 color, bool wordwrap) {
-    C2D_TextBufClear(sbuffer);
-    C2D_TextParse(&stext, sbuffer, text);
-    C2D_TextOptimize(&stext);
-
-    if (!wordwrap) {
-        C2D_DrawText(&stext, C2D_WithColor, x, y, z, scaleX, scaleY, color);
+    for (int i = 0; i < 2; i++) {
+        waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
+        waveBufs[i].status = NDSP_WBUF_DONE;
     }
-    if (wordwrap) {
-        C2D_DrawText(&stext, C2D_WithColor | C2D_WordWrap, x, y, z, scaleX, scaleY, color, 290.0f);
+
+    while (!data->quit) {
+        for (int i = 0; i < 2; i++) {
+            if (waveBufs[i].status == NDSP_WBUF_DONE) {
+                if (!fillBufferNoLoop(data->file, &waveBufs[i])) {
+                    data->quit = true;
+                    break;
+                }
+            }
+        }
+        svcSleepThread(1000000L);
+    }
+
+    op_free(data->file);
+    linearFree(audioBuffer);
+    svcExitThread();
+}
+
+bool playsound = true;
+
+Thread playSound(const char* path) {
+    if (playsound) {
+        int err;
+        OggOpusFile* file = op_open_file(path, &err);
+        if (!file) return NULL;
+
+        audioBuffer = (int16_t*)linearAlloc(WAVEBUF_SIZE * 2);
+        if (!audioBuffer) { op_free(file); return NULL; }
+
+        AudioThreadData* data = (AudioThreadData*)malloc(sizeof(AudioThreadData));
+        data->file = file;
+        data->quit = false;
+
+        Thread thread = threadCreate(audioThreadFunc, data, 0x10000, 0x1F, -2, true);
+        return thread; // Returns NULL on failure
     }
 }
+
+
+
+/*
+
+    Sprite Tap Detection
+    Coded by: Virtualle
+    Note: This is pretty flawed in a lot of cases, but it works to some extent.
+
+*/
 
 bool isSpriteTapped(C2D_Sprite* sprite, float scaleX, float scaleY) {
     static bool wasTouched = false;
@@ -132,64 +487,116 @@ bool isSpriteTapped(C2D_Sprite* sprite, float scaleX, float scaleY) {
 
 
 
+/*
+
+    DrawText()
+    Coded by: Virtualle
+    Note: This is not very good, however it gets the job done fairly easily!
+
+*/
+
+C2D_TextBuf sbuffer;
+C2D_Text stext;
+
+void DrawText(char *text, float x, float y, int z, float scaleX, float scaleY, u32 color, bool wordwrap) {
+//    if (!sbuffer) {return;}
+    C2D_TextBufClear(sbuffer);
+    C2D_TextParse(&stext, sbuffer, text);
+    C2D_TextOptimize(&stext);
+    float wordwrapsize = 290.0f;
+
+    if (!wordwrap) {
+        C2D_DrawText(&stext, C2D_WithColor, x, y, z, scaleX, scaleY, color);
+    }
+    if (wordwrap) {
+        C2D_DrawText(&stext, C2D_WithColor | C2D_WordWrap, x, y, z, scaleX, scaleY, color, wordwrapsize);
+    }
+}
+
+
+/*
+
+
+    Append Chat Message
+    Coded by: Virtualle
+    Extra credit: Funtum
+    Note: This is based off of Funtum's version, even named the same, but it is heavily different.
+
+
+*/
+
+float chatscroll = 10.0f;
+
+char chat[3000] = "-chat-\n";
+
+void append_message(char* to_add) {
+    size_t len = strlen(chat);
+    size_t add_len = strlen(to_add);
+    int space_left = 3000 - len - 1;
+
+    if (add_len + 1 > space_left) return;
+
+    // Copy to_add into chat with line breaks every 30 chars
+    int i = 0;
+    while (i < add_len) {
+        int chunk = (add_len - i >= 30) ? 30 : add_len - i;
+        strncat(chat, to_add + i, chunk);
+        len = strlen(chat);
+        if (i + chunk < add_len && len + 2 < 3000) {
+            strcat(chat, "\n");
+        }
+        i += chunk;
+    }
+    chatscroll = chatscroll - 10;
+}
+
+C2D_SpriteSheet spriteSheet;
+C2D_Sprite button;
+C2D_Sprite button2;
+C2D_Sprite button3;
+C2D_Sprite button4;
+
+int scene = 1;
+
+char password[21];
+char username[21];
+
+bool showpassword = false;
+
+char buftext[256];
+
+bool showpassjustpressed = false;
 
 
 
+/*
+
+    This is the main function, this is what code will run when you actually start the program.
+
+*/
 
 
+int main() {
 
-
-
-
-
-
-
-
-
-int main(int argc, char **argv) {
-    romfsInit();
+    fsInit();
+	romfsInit();
     gfxInitDefault();
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
     C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
     C2D_Prepare();
     C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
-    C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-    
-    int themamt = 9;
+	C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
+    httpcInit(4 * 1024 * 1024);
 
-    u32 sampleCount;
+    spriteSheet = C2D_SpriteSheetLoad("romfs:/gfx/sprites.t3x");
+    C2D_SpriteFromImage(&button, C2D_SpriteSheetGetImage(spriteSheet, 0));
+    C2D_SpriteFromImage(&button2, C2D_SpriteSheetGetImage(spriteSheet, 0));
+    C2D_SpriteFromImage(&button3, C2D_SpriteSheetGetImage(spriteSheet, 0));
+    C2D_SpriteFromImage(&button4, C2D_SpriteSheetGetImage(spriteSheet, 0));
 
-    ndspInit();
-    ndspSetOutputMode(NDSP_OUTPUT_STEREO);
-    ndspChnSetRate(0, SAMPLE_RATE);
-    ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
-    ndspSetCallback(audioCallback, NULL);
-
-    OggOpusFile *file = op_open_file("romfs:/Project_4.opus", NULL);
+    http_post("http://127.0.0.1:3072/api", "{\"cmd\":\"CONNECT\"}");
 
     sbuffer = C2D_TextBufNew(4096);
-
-    audioBuffer = linearAlloc(WAVEBUF_SIZE * 2);
-    memset(waveBufs, 0, sizeof(waveBufs));
-    for (int i = 0; i < 2; i++) {
-        waveBufs[i].data_pcm16 = audioBuffer + (i * SAMPLES_PER_BUF * CHANNELS);
-        waveBufs[i].status = NDSP_WBUF_DONE;
-    }
-
-    LightEvent_Init(&audioEvent, RESET_ONESHOT);
-    Thread thread = threadCreate(audioThread, file, 32 * 1024, 0x3F, 1, false);
-
-    // chatgpt
-    if (!fillBuffer(file, &waveBufs[0]));
-    if (!fillBuffer(file, &waveBufs[1]));
-    
-    sbuffer = C2D_TextBufNew(4096);
-    chatbuffer = C2D_TextBufNew(4096);
-
-
-    C2D_TextParse(&chat, chatbuffer, chatstring);
-    C2D_TextOptimize(&chat);
-
 
     u32 *soc_buffer = memalign(0x1000, 0x100000);
     if (!soc_buffer) {
@@ -204,128 +611,43 @@ int main(int argc, char **argv) {
         // placeholder
     }
 
+    /*
+    
+        Sockets have been majorly deprecated, however they are still used for grabbing messages.
+        The reason for this is because these raw TCP sockets are suspected to be a cause of the doxxing.
+    
+    */
+
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(8961); // new niche meme?
-    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // one below 61 (new niche meme)
+    server.sin_port = htons(4040);
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
     }
+    
 
-    char username[21]; //swkbd registers name, but client doesnt, now it does
-    // okay
-    // was i the one who made that comment???
 
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0; // NOT 10ms
 
-    u32 textcolor;
-    u32 themecolor;
+    /*
+    
+        This is what will run every frame. You have to be careful with things that MUST only be triggered once here.
+    
+    */
 
-    char buffer[512];
-    char lastbuffer[512];
-
-    char acc_password[21];
-    char acc_username[21];
-
-    send(sock, "LOGGEDIN?", strlen("LOGGEDIN?"), 0);
-    int loginstatus = 1;
+    char buffer[1024] = {0};
 
     while (aptMainLoop()) {
-        gspWaitForVBlank();
+        /*
+        
+            Scan inputs, allows the program to detect button presses.
+        
+        */
         hidScanInput();
 
-//        if (hidKeysDown() & KEY_A) { // this is commented because usernames are now handled by the server. Not the client (this will change when I add display names!)
-//            char message[64];
-//            char input[64];
-//            SwkbdState swkbd;
-//            swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-//            swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-//            swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-//
-//            SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
-//        }
 
-        if (scene == 1) {
-            if (hidKeysDown() & KEY_B) {
-                char message[80];
-                char msg[128];
-
-                char input[80];
-                SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 80);
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-
-                SwkbdButton button = swkbdInputText(&swkbd, message, sizeof(message));
-                if (button == SWKBD_BUTTON_CONFIRM) {
-                    sprintf(msg, "CHAT,%s", message);
-                    send(sock, msg, strlen(msg), 0);
-                }
-            }
-        }
-
-        if (scene == 4) {
-            if (hidKeysDown() & KEY_L) {
-                SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-
-                SwkbdButton button = swkbdInputText(&swkbd, acc_username, sizeof(acc_username));
-            }
-            if (hidKeysDown() & KEY_R) {
-                SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-
-                SwkbdButton button = swkbdInputText(&swkbd, acc_password, sizeof(acc_password));
-            }
-            if (hidKeysHeld() & KEY_X) {
-                char msg[80];
-                sprintf(msg, "MAKEACC,%s,%s", acc_username, acc_password);
-                send(sock, msg, strlen(msg), 0);
-            }
-        }
-        if (scene == 5) {
-            if (hidKeysDown() & KEY_L) {
-                SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-
-                SwkbdButton button = swkbdInputText(&swkbd, acc_username, sizeof(acc_username));
-            }
-            if (hidKeysDown() & KEY_R) {
-                SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-
-                SwkbdButton button = swkbdInputText(&swkbd, acc_password, sizeof(acc_password));
-            }
-            if (hidKeysHeld() & KEY_X) {
-                char msg[80];
-                sprintf(msg, "LOGINACC,%s,%s", acc_username, acc_password);
-                send(sock, msg, strlen(msg), 0);
-            }
-        }
-
-
-//        if (hidKeysHeld() & KEY_X) {
-//            send(sock, "MAKEACC,RIZZ,GYATT", strlen("MAKEACC,RIZZ,GYATT"), 0);
-//        }
-
-//        if (hidKeysHeld() & KEY_Y) { // keep these for reference but don't uncomment them
-//            send(sock, "LOGINACC,RIZZ,GYATT", strlen("LOGINACC,RIZZ,GYATT"), 0);
-//        }
-//        if (hidKeysHeld() & KEY_R) {
-//            send(sock, "LOGGEDIN?", strlen("LOGGEDIN?"), 0);
-//        }
 
         fd_set readfds;
         struct timeval timeout;
@@ -333,272 +655,401 @@ int main(int argc, char **argv) {
         FD_ZERO(&readfds);
         FD_SET(sock, &readfds);
         timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
+        timeout.tv_usec = 10000; // 10ms
 
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
 
-                
                 buffer[len] = '\0';
 
-                lastbuffer[512] = buffer[len];
 
-                if (loginstatus == 0) {
-                    char temp[6000];
-                    snprintf(temp, sizeof(temp), "%s\n%s", chatstring, buffer);
-                    strncpy(chatstring, temp, sizeof(chatstring));
-                    chatscroll = chatscroll - 20; // increase
-                    const char* parseResult = C2D_TextParse(&chat, chatbuffer, chatstring);
-                    if (parseResult != NULL && *parseResult != '\0') {
-                        chatbuffer = C2D_TextBufResize(chatbuffer, 8192);
-                        if (chatbuffer) {
-                            C2D_TextBufClear(chatbuffer);
-                            C2D_TextParse(&chat, chatbuffer, chatstring);
-                        }
-                    }
-                    C2D_TextOptimize(&chat);
-                }
-                if (loginstatus == 1) {
-                    if (strcmp(buffer, "False") == 0) {
-                        loginstatus = 2;
-                        scene = 3;
-                    }
-                    if (strcmp(buffer, "True") == 0) {
-                        loginstatus = 0;
-                        scene = 1;
-                    }
-                }
-                if (loginstatus == 2) {
-                    if (strcmp(buffer, "USR_CREATED") == 0) {
-                        loginstatus = 1;
-                        scene = 3;
-                    }
-                    if (strcmp(buffer, "USR_IN_USE") == 0) {
-                        loginstatus = 1;
-                        scene = 3;
-                    }
-                }
-                if (loginstatus == 3) {
-                    if (strcmp(buffer, "LOGIN_OK") == 0) {
-                        loginstatus = 0;
-                        scene = 1;
-                    }
-                    if (strcmp(buffer, "LOGIN_WRONG_PASS") == 0) {
-                        loginstatus = 1;
-                        scene = 3;
-                    }
-                }
+                append_message(buffer);
+            }
+        }
+
+        if (scene == 10) {
+            if (hidKeysDown() & KEY_A) {
+                char msg[356];
+                SwkbdState swkbd;
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdSetHintText(&swkbd, "Say something...");
+
+                SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
+
+                char sender[360];
+                sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
+                http_post("http://127.0.0.1:3072/api", sender);
+            }
+            if (isSpriteTapped(&button, 0.8f, 0.8f)) {
+                char msg[356];
+                SwkbdState swkbd;
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdSetHintText(&swkbd, "Say something...");
+
+                SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
+
+                char sender[360];
+                sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
+                http_post("http://127.0.0.1:3072/api", sender);
             }
         }
 
 
-        if (strlen(chatstring) > 3500) {
-            strcpy(chatstring, "-chat cleared!-\n");
-            C2D_TextBufClear(chatbuffer);
-            C2D_TextParse(&chat, chatbuffer, chatstring);
-            C2D_TextOptimize(&chat);
-            chatscroll = 20;
-        }
 
 
-        if (hidKeysDown() & KEY_START) break;
-
-        if (hidKeysHeld() & KEY_CPAD_DOWN) {
-            chatscroll = chatscroll - 5;
-        }
-
-        if (hidKeysHeld() & KEY_CPAD_UP) {
-            chatscroll = chatscroll + 5;
-        }
-
-        if ((hidKeysDown() & KEY_L) && scene == 1) {
-            scene = 2;
-        }
-
-        if ((hidKeysDown() & KEY_X) && scene == 2) {
-            scene = 1;
-        }
-
-        if (hidKeysDown() & KEY_DUP) {
-            if (!switched) {
-                theme++;
-                switched = true;
-            }
-            if (theme > themamt) {
-                theme = 1;
-            }
-        }
-        if (hidKeysDown() & KEY_DDOWN) {
-            if (!switched) {
-                theme--;
-                switched = true;
-            }
-            if (theme < 1) {
-                theme = themamt;
-            }
-        }
-
-        switched = false;
-
-
-        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-        C2D_TargetClear(top, themecolor);
-        C2D_SceneBegin(top);
-
-        DrawText(lastbuffer, 140.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
-
-
-        char *themename;
-        if (theme == 1) {
-            themename = "Aurora White";
-            themecolor = C2D_Color32(255, 255, 255, 255);
-            textcolor = C2D_Color32(0, 0, 0, 255);
-        }
-        if (theme == 2) {
-            themename = "Deep Gray";
-            themecolor = C2D_Color32(73, 73, 73, 255);
-            textcolor = C2D_Color32(0, 0, 0, 255);
-        }
-        if (theme == 3) {
-            themename = "Homeblue Chat";
-            themecolor = C2D_Color32(0, 26, 242, 255);
-            textcolor = C2D_Color32(0, 0, 0, 255);
-        }
-        if (theme == 4) {
-            themename = "Hackertron Style";
-            themecolor = C2D_Color32(0, 0, 0, 255);
-            textcolor = C2D_Color32(17, 255, 0, 255);
-        }
-        if (theme == 5) {
-            themename = "Dark Mode";
-            themecolor = C2D_Color32(23, 27, 57, 255);
-            textcolor = C2D_Color32(255, 255, 255, 255);
-        }
-        if (theme == 6) {
-            themename = "Blurange";
-            themecolor = C2D_Color32(0, 25, 117, 255);
-            textcolor = C2D_Color32(255, 189, 97, 255);
-        }
-        if (theme == 7) {
-            themename = "Red Paint";
-            themecolor = C2D_Color32(255, 80, 80, 255);
-            textcolor = C2D_Color32(255, 255, 255, 255);
-        }
-        if (theme == 8) {
-            themename = "Deep Blue.";
-            themecolor = C2D_Color32(6, 0, 57, 255);
-            textcolor = C2D_Color32(255, 255, 255, 255);
-        }
-        if (theme == 9) {
-            themename = "True Dark Mode";
-            themecolor = C2D_Color32(0, 0, 0, 255);
-            textcolor = C2D_Color32(255, 255, 255, 255);
-        }
 
         if (scene == 1) {
-
-
-            DrawText("aurorachat", 140.0f, 0.0f, 0, 1.0f, 1.0f, textcolor, false);
-            
-
-            sprintf(usernameholder, "%s %s", "Username:", username);
-
-            DrawText(usernameholder, 0.0f, 200.0f, 0, 1.0f, 1.0f, textcolor, false);
-
-
-
-            
-            DrawText("v0.0.4.0", 175.0f, 25.0f, 0, 0.6f, 0.6f, textcolor, false);
-            
-            
-            
-
-
-
-
-//            DrawText("A: Change Username\nB: Send Message\nL: Rules\nD-PAD: Change Theme", 0.0f, 0.0f, 0, 0.6f, 0.6f, textcolor, false);
-            
-            
-
-
-//            DrawText(themename, 0.0f, 270.0f, 0, 0.4f, 0.4f, textcolor, false);
-
+            if (isSpriteTapped(&button, 0.8f, 0.8f)) {
+                scene = 2;
+            }
+            if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
+                scene = 3;
+            }
         }
-
 
         if (scene == 2) {
-            DrawText("(Press X to Go Back)\n\nRule 1: No Spamming\n\nRule 2: No Swearing\n\nRule 3: No Impersonating\n\nRule 4: No Politics\n\nAll of these could result in a ban.", 0.0f, 0.0f, 0, 0.5f, 0.6f, textcolor, false);
-        }
+            if (isSpriteTapped(&button, 0.8f, 0.8f)) {
+                SwkbdState swkbd;
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdSetHintText(&swkbd, "Enter a username...");
 
-        C2D_TargetClear(bottom, themecolor);
-        
-        C2D_SceneBegin(bottom);
-        
-        if (scene == 1 || scene == 2) {
-            C2D_DrawRectSolid(20, 0, 0, 275, 250, C2D_Color32(200, 200, 200, 70));
-            C2D_DrawText(&chat, C2D_WithColor | C2D_WordWrap, 35.0f, chatscroll, 0, 0.5, 0.5, textcolor, 200.0f);
-        }
-
-        if (scene == 3) {
-            C2D_SceneBegin(top);
-            DrawText("Press A to Sign Up.", 150.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
-            DrawText("Press B to Log in.", 150.0f, 40.0f, 0, 0.4f, 0.4f, textcolor, false);
-
-            if (hidKeysHeld() & KEY_A) {
-                loginstatus = 2;
-                scene = 4;
+                SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
             }
-            if (hidKeysHeld() & KEY_B) {
-                loginstatus = 3;
-                scene = 5;
+
+            if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
+                SwkbdState swkbd;
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY); // i added a cancel button, yippe
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0); // top ten stolen and EXPANDED from aurorachat
+                swkbdSetHintText(&swkbd, "Enter a password...");
+                if (password) {
+                    swkbdSetInitialText(&swkbd, password);
+                }
+                if (!showpassword) {
+                    swkbdSetPasswordMode(&swkbd, SWKBD_PASSWORD_HIDE_DELAY);
+                }
+
+
+                SwkbdButton button = swkbdInputText(&swkbd, password, sizeof(password)); 
+            }
+            if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
+                scene = 4;
             }
         }
 
         if (scene == 4) {
-            C2D_SceneBegin(top);
-            DrawText("Press L to set your username.", 0.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
-            DrawText("Press R to set your password.", 0.0f, 40.0f, 0, 0.4f, 0.4f, textcolor, false);
-            DrawText("Press X to register.", 0.0f, 80.0f, 0, 0.4f, 0.4f, textcolor, false);
+            if (isSpriteTapped(&button, 0.8f, 0.8f)) {
+                if (!showpassjustpressed) {
+                    showpassword = !showpassword;
+                    showpassjustpressed = true;
+                }
+            } else {
+                showpassjustpressed = false;
+            }
+            if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
+                char signuppostbody[128];
+                sprintf(signuppostbody, "{\"cmd\":\"MAKEACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
+                http_post("http://127.0.0.1:3072/api", signuppostbody);
+                sprintf(buftext, "%s", buf);
+                if (strstr(buftext, "USR_CREATED") != 0) {
+                    scene = 1;
+                }
+                if (strcmp(buftext, "(null)") == 0) {
+                    scene = 61;
+                }
+                if (strstr(buftext, "USR_IN_USE") != 0) {
+                    scene = 67;
+                }
+            }
         }
 
-        if (scene == 5) {
-            C2D_SceneBegin(top);
-            DrawText("Press L to input your username.", 0.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
-            DrawText("Press R to input your password.", 0.0f, 40.0f, 0, 0.4f, 0.4f, textcolor, false);
-            DrawText("Press X to login after you've inputted your username and password.", 0.0f, 80.0f, 0, 0.4f, 0.4f, textcolor, false);
-        }
+        if (scene == 3) {
 
-        if (scene == 6) {
-            C2D_SceneBegin(top);
-            DrawText("Account created! Press A to proceed to the login screen.", 0.0f, 0.0f, 0, 0.4f, 0.4f, textcolor, false);
-            if (hidKeysDown() & KEY_A) {
-                loginstatus = 3;
+            if (isSpriteTapped(&button, 0.8f, 0.8f)) {
+                SwkbdState swkbd;
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+
+                SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username));
+            }
+
+            if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
+                SwkbdState swkbd;
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY);
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdSetHintText(&swkbd, "Enter a password...");
+                if (password) {
+                    swkbdSetInitialText(&swkbd, password);
+                }
+                if (!showpassword) { // I implemented this but I refuse to use it because IM EVIL.
+                    swkbdSetPasswordMode(&swkbd, SWKBD_PASSWORD_HIDE_DELAY);
+                }
+
+
+                SwkbdButton button = swkbdInputText(&swkbd, password, sizeof(password)); 
+            }
+            if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
                 scene = 5;
             }
         }
 
+        if (scene == 5) {
+            if (isSpriteTapped(&button, 0.8f, 0.8f)) {
+                if (!showpassjustpressed) {
+                    showpassword = !showpassword;
+                    showpassjustpressed = true;
+                }
+            } else {
+                showpassjustpressed = false;
+            }
+            if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
+                char signuppostbody[128];
+                sprintf(signuppostbody, "{\"cmd\":\"LOGINACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
+                http_post("http://127.0.0.1:3072/api", signuppostbody);
+                sprintf(buftext, "%s", buf);
+                if (strstr(buftext, "LOGIN_OK") != 0) {
+                    scene = 10;
+                    char welcome[100];
+                    sprintf(welcome, "Welcome to aurorachat, %s!\n", username);
+                    append_message(welcome);
+                }
+                if (strcmp(buftext, "(null)") == 0) {
+                    scene = 61;
+                }
+                if (strstr(buftext, "LOGIN_WRONG_PASS") != 0) {
+                    scene = 68;
+                }
+                if (strstr(buftext, "LOGIN_FAKE_ACC") != 0) {
+                    scene = 68;
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+        /*
+        
+            Begin the frame, nothing actually starts drawing when you do this, it is still required.
+        
+        */
+        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+
+
+        /*
+        
+            Clear the screens with a color. Think of it like sliding a blank piece of paper on top of one with drawings on it.
+        
+        */
+        C2D_TargetClear(top, C2D_Color32(255, 255, 255, 50));
+        C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 50));
+
+        C2D_SceneBegin(top);
+
+        DrawText("Aurorachat", 290.0f, 5.0f, 0, 0.7f, 0.7f, C2D_Color32(0, 0, 100, 200), true);
+        DrawText("version 4", 325.0f, 20.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 100, 200), true);
+
+
+        if (scene == 10) {
+            DrawText(chat, 10.0f, chatscroll, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+
+            C2D_SceneBegin(bottom);
+
+            C2D_SpriteSetPos(&button, 200.0f, 200.0f);
+            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+            C2D_DrawSprite(&button);
+
+            DrawText("Send", 235.0f, 215.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+
+            DrawText(": Send Message", 10.0f, 10.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText(": Scroll Chat", 10.0f, 30.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+
+            if (hidKeysHeld() & KEY_UP) {
+                chatscroll = chatscroll + 5;
+            }
+            if (hidKeysHeld() & KEY_DOWN) {
+                chatscroll = chatscroll - 5;
+            }
+        }
+
+
+
+
+
+
+
+        C2D_SceneBegin(bottom);
+
+        if (scene == 1) {
+            C2D_SceneBegin(top);
+            DrawText("Sign Up or Sign In", 150.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            C2D_SceneBegin(bottom);
+            C2D_SpriteSetPos(&button, 75.0f, 50.0f);
+            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+            C2D_DrawSprite(&button);
+            DrawText("Sign Up", 130.0f, 62.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button2, 75.0f, 130.0f);
+            C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
+            C2D_DrawSprite(&button2);
+            DrawText("Sign In", 132.0f, 143.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+        }
+
+        if (scene == 2) {
+            C2D_SceneBegin(top);
+            DrawText("Sign Up", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText("Enter a username and password.", 100.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            C2D_SceneBegin(bottom);
+            C2D_SpriteSetPos(&button, 75.0f, 50.0f);
+            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+            C2D_DrawSprite(&button);
+            DrawText("Username", 120.0f, 62.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button2, 75.0f, 130.0f);
+            C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
+            C2D_DrawSprite(&button2);
+            DrawText("Password", 120.0f, 143.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button3, 165.0f, 190.0f);
+            C2D_SpriteSetScale(&button3, 0.4f, 0.4f);
+            C2D_DrawSprite(&button3);
+            DrawText("Continue", 210.0f, 205.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+        }
+
+        if (scene == 3) {
+            C2D_SceneBegin(top);
+            DrawText("Sign In", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText("Enter your username and password.", 90.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            C2D_SceneBegin(bottom);
+            C2D_SpriteSetPos(&button, 75.0f, 50.0f);
+            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+            C2D_DrawSprite(&button);
+            DrawText("Username", 120.0f, 62.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button2, 75.0f, 130.0f);
+            C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
+            C2D_DrawSprite(&button2);
+            DrawText("Password", 120.0f, 143.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button3, 165.0f, 190.0f);
+            C2D_SpriteSetScale(&button3, 0.4f, 0.4f);
+            C2D_DrawSprite(&button3);
+            DrawText("Continue", 210.0f, 205.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+        }
+
+        if (scene == 4) {
+            C2D_SceneBegin(top);
+            DrawText("Confirm", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            char confirmation[256];
+            if (showpassword) {
+                sprintf(confirmation, "Username: %s\nPassword: %s", username, password);
+            }
+            if (!showpassword) {
+                sprintf(confirmation, "Username: %s\nPassword: (hidden)", username);
+            }
+            DrawText(confirmation, 140.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            C2D_SceneBegin(bottom);
+            C2D_SpriteSetPos(&button2, 75.0f, 50.0f);
+            C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
+            C2D_DrawSprite(&button2);
+            DrawText("Register", 130.0f, 62.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button, 75.0f, 130.0f);
+            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+            C2D_DrawSprite(&button);
+            DrawText("Show Password", 100.0f, 143.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+        }
+
+        if (scene == 5) {
+            C2D_SceneBegin(top);
+            DrawText("Confirm", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            char confirmation[256];
+            if (showpassword) {
+                sprintf(confirmation, "Username: %s\nPassword: %s", username, password);
+            }
+            if (!showpassword) {
+                sprintf(confirmation, "Username: %s\nPassword: (hidden)", username);
+            }
+            DrawText(confirmation, 140.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            C2D_SceneBegin(bottom);
+            C2D_SpriteSetPos(&button2, 75.0f, 50.0f);
+            C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
+            C2D_DrawSprite(&button2);
+            DrawText("Log In", 130.0f, 62.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+            C2D_SpriteSetPos(&button, 75.0f, 130.0f);
+            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+            C2D_DrawSprite(&button);
+            DrawText("Show Password", 100.0f, 143.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+        }
+
+
+        if (scene == 61) {
+            C2D_SceneBegin(top);
+            DrawText("API is down. Restart to try again.", 100.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
+            C2D_SceneBegin(bottom);
+        }
+
+        if (scene == 67) {
+            C2D_SceneBegin(top);
+            char debugger[256];
+            DrawText("Account already exists.", 140.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
+            DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), true);
+            sprintf(debugger, "Debug: %s", buftext);
+            DrawText(debugger, 0.0f, 225.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), false);
+
+            if (hidKeysDown() & KEY_B) {
+                scene = 1;
+            }
+        }
+
+        if (scene == 68) {
+            C2D_SceneBegin(top);
+            char debugger[256];
+            DrawText("Invalid Credentials", 140.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
+            DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), true);
+            sprintf(debugger, "Debug: %s", buftext);
+            DrawText(debugger, 0.0f, 225.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), false);
+
+            if (hidKeysDown() & KEY_B) {
+                scene = 1;
+            }
+        }
+
+
+
+
+
+
 
         C3D_FrameEnd(0);
-
-        if (waveBufs[0].status == NDSP_WBUF_DONE) {
-            if (!fillBuffer(file, &waveBufs[0]));
-        }
-        if (waveBufs[1].status == NDSP_WBUF_DONE) {
-            if (!fillBuffer(file, &waveBufs[1]));
-        }
-
-
-        svcSleepThread(1000000L); // required, otherwise audio can be glitchy, distorted, and chopped up.
 
     }
 
 
+    quit = true;
 
-    
-    closesocket(sock);
+//    if (sfx1) linearFree(sfx1);
+
+    ndspSetCallback(NULL, NULL);
     ndspExit();
-    socExit();
+
+    httpcExit();
+
+    C2D_TextBufDelete(sbuffer);
+    C2D_Fini();
+    C3D_Fini();
+
+    fsExit();
+    romfsExit();
     gfxExit();
     return 0;
+
+
 }
