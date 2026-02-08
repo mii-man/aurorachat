@@ -594,7 +594,7 @@ int main() {
     C2D_SpriteFromImage(&button3, C2D_SpriteSheetGetImage(spriteSheet, 0));
     C2D_SpriteFromImage(&button4, C2D_SpriteSheetGetImage(spriteSheet, 0));
 
-    http_post("http://127.0.0.1:3072/api", "{\"cmd\":\"CONNECT\"}");
+    http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", "{\"cmd\":\"CONNECT\"}");
 
     sbuffer = C2D_TextBufNew(4096);
 
@@ -622,7 +622,7 @@ int main() {
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_port = htons(4040);
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_addr.s_addr = inet_addr("104.236.25.60");
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
@@ -679,9 +679,9 @@ int main() {
 
                 SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
 
-                char sender[360];
+                char sender[460];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
-                http_post("http://127.0.0.1:3072/api", sender);
+                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", sender);
             }
             if (isSpriteTapped(&button, 0.8f, 0.8f)) {
                 char msg[356];
@@ -693,9 +693,9 @@ int main() {
 
                 SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
 
-                char sender[360];
+                char sender[460];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
-                http_post("http://127.0.0.1:3072/api", sender);
+                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", sender);
             }
         }
 
@@ -756,7 +756,7 @@ int main() {
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 char signuppostbody[128];
                 sprintf(signuppostbody, "{\"cmd\":\"MAKEACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
-                http_post("http://127.0.0.1:3072/api", signuppostbody);
+                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", signuppostbody);
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "USR_CREATED") != 0) {
                     scene = 1;
@@ -814,7 +814,7 @@ int main() {
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 char signuppostbody[128];
                 sprintf(signuppostbody, "{\"cmd\":\"LOGINACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
-                http_post("http://127.0.0.1:3072/api", signuppostbody);
+                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", signuppostbody);
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "LOGIN_OK") != 0) {
                     scene = 10;
@@ -998,7 +998,7 @@ int main() {
 
         if (scene == 67) {
             C2D_SceneBegin(top);
-            char debugger[256];
+            char debugger[280];
             DrawText("Account already exists.", 140.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
             DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), true);
             sprintf(debugger, "Debug: %s", buftext);
@@ -1011,7 +1011,7 @@ int main() {
 
         if (scene == 68) {
             C2D_SceneBegin(top);
-            char debugger[256];
+            char debugger[280];
             DrawText("Invalid Credentials", 140.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
             DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), true);
             sprintf(debugger, "Debug: %s", buftext);
@@ -1041,6 +1041,8 @@ int main() {
     ndspExit();
 
     httpcExit();
+
+    C2D_SpriteSheetFree(spriteSheet);
 
     C2D_TextBufDelete(sbuffer);
     C2D_Fini();
