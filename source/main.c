@@ -10,7 +10,7 @@
     Lead Developer: Virtualle / VirtuallyExisting
     Server Developed by: hackertron and Orstando
     Music by: Virtualle, manti-09
-    Commentary by: Virtualle
+    Commentary mostly by Virtualle
 
     This project was inspired by hbchat, a project created by Virtualle in October 2025, the project collapsed due to a doxxing that had 4 victims.
 
