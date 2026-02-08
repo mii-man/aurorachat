@@ -38,13 +38,3 @@ jobs:
         with:
           name: aurorachat CIA Automatic Build (could be unfinished!)
           path: ./aurorachat.cia
-          
-      - name: Setup Java JDK
-        uses: actions/setup-java@v5.1.0
-        with:
-          distribution: zulu
-          java-version: '21'
-      - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v5.1.0
-        with:
-          dotnet-version: 8.0
