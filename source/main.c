@@ -594,7 +594,7 @@ int main() {
     C2D_SpriteFromImage(&button3, C2D_SpriteSheetGetImage(spriteSheet, 0));
     C2D_SpriteFromImage(&button4, C2D_SpriteSheetGetImage(spriteSheet, 0));
 
-    http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", "{\"cmd\":\"CONNECT\"}");
+    http_post("https:///104.236.25.60:3072/api", "{\"cmd\":\"CONNECT\"}");
 
     sbuffer = C2D_TextBufNew(4096);
 
@@ -681,7 +681,7 @@ int main() {
 
                 char sender[460];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
-                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", sender);
+                http_post("https:///104.236.25.60:3072/api", sender);
             }
             if (isSpriteTapped(&button, 0.8f, 0.8f)) {
                 char msg[356];
@@ -695,7 +695,7 @@ int main() {
 
                 char sender[460];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
-                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", sender);
+                http_post("https:///104.236.25.60:3072/api", sender);
             }
         }
 
@@ -756,7 +756,7 @@ int main() {
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 char signuppostbody[128];
                 sprintf(signuppostbody, "{\"cmd\":\"MAKEACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
-                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", signuppostbody);
+                http_post("https:///104.236.25.60:3072/api", signuppostbody);
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "USR_CREATED") != 0) {
                     scene = 1;
@@ -814,7 +814,7 @@ int main() {
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 char signuppostbody[128];
                 sprintf(signuppostbody, "{\"cmd\":\"LOGINACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
-                http_post("https://spine-jewelry-pierce-aus.trycloudflare.com/api", signuppostbody);
+                http_post("https:///104.236.25.60:3072/api", signuppostbody);
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "LOGIN_OK") != 0) {
                     scene = 10;
