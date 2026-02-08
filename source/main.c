@@ -5,10 +5,6 @@
   / _` | | | | '__/ _ \| '__/ _` |/ __| '_ \ / _` | __|
  | (_| | |_| | | | (_) | | | (_| | (__| | | | (_| | |_ 
   \__,_|\__,_|_|  \___/|_|  \__,_|\___|_| |_|\__,_|\__|                    
-             __  __     __  ______ __     
-            |__)|_ |  ||__)| |  | |_ |\ | 
-            | \ |__|/\|| \ | |  | |__| \| 
-                              
 
     Project initialized and owned by: mii-man
     Lead Developer: Virtualle / VirtuallyExisting
@@ -16,33 +12,16 @@
     Music by: Virtualle, manti-09
     Commentary by: Virtualle
 
-
-
-
     This project was inspired by hbchat, a project created by Virtualle in October 2025, the project collapsed due to a doxxing that had 4 victims.
 
-
     Aurorachat is designed to remove the flawed, tangled mess of bugs and exploits that were in hbchat and make something that will inspire many and grow a community once more.
-
-
-
-
-
+	
     This code is owned underneath the license given with the project, if you are to distribute this code the license is required to be with the code.
     
+	Have a good day!
 
-
-    This is a rewrite of the original aurorachat, remade to use aurorahttp by Orstando and to have much better choices. The comment you've just read was created by VirtuallyExisting / Virtualle, have a good day!
-
-
+	- Virtualle
 */
-
-
-
-
-
-
-
 
 #include <3ds.h>
 #include <stdio.h>
@@ -53,7 +32,6 @@
 #include <opusfile.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
 #include <3ds/applets/swkbd.h>
 
 /*
@@ -64,14 +42,10 @@
 
 */
 
-
 u32 size;
 u32 siz;
-
 u32 bw;
-
 u8 *buf;
-
 volatile bool downloadDone;
 
 typedef struct {
@@ -209,8 +183,6 @@ Thread startDownload(const char* url, const char* path) {
     }
     return thread;
 }
-
-
 
 
 Result http_post(const char* url, const char* data) {
@@ -450,8 +422,6 @@ Thread playSound(const char* path) {
     }
 }
 
-
-
 /*
 
     Sprite Tap Detection
@@ -550,24 +520,18 @@ void append_message(char* to_add) {
     chatscroll = chatscroll - 10;
 }
 
+// Main Variable Setup
 C2D_SpriteSheet spriteSheet;
 C2D_Sprite button;
 C2D_Sprite button2;
 C2D_Sprite button3;
 C2D_Sprite button4;
-
 int scene = 1;
-
 char password[21];
 char username[21];
-
 bool showpassword = false;
-
 char buftext[256];
-
 bool showpassjustpressed = false;
-
-
 
 /*
 
@@ -575,9 +539,7 @@ bool showpassjustpressed = false;
 
 */
 
-
 int main() {
-
     fsInit();
 	romfsInit();
     gfxInitDefault();
@@ -627,9 +589,6 @@ int main() {
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) != 0) {
         // placeholder
     }
-    
-
-
 
     /*
     
@@ -647,8 +606,6 @@ int main() {
         */
         hidScanInput();
 
-
-
         fd_set readfds;
         struct timeval timeout;
 
@@ -660,10 +617,7 @@ int main() {
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
-
                 buffer[len] = '\0';
-
-
                 append_message(buffer);
             }
         }
@@ -672,8 +626,8 @@ int main() {
             if (hidKeysDown() & KEY_A) {
                 char msg[356];
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Say something...");
 
@@ -686,8 +640,8 @@ int main() {
             if (isSpriteTapped(&button, 0.8f, 0.8f)) {
                 char msg[356];
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356);
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Say something...");
 
@@ -717,7 +671,7 @@ int main() {
                 SwkbdState swkbd;
                 swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
                 swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0); // top ten stolen and EXPANDED from aurorachat
                 swkbdSetHintText(&swkbd, "Enter a username...");
 
                 SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
@@ -725,9 +679,9 @@ int main() {
 
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
-                swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0); // top ten stolen and EXPANDED from aurorachat
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
+                swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY);
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Enter a password...");
                 if (password) {
                     swkbdSetInitialText(&swkbd, password);
@@ -794,7 +748,6 @@ int main() {
                     swkbdSetPasswordMode(&swkbd, SWKBD_PASSWORD_HIDE_DELAY);
                 }
 
-
                 SwkbdButton button = swkbdInputText(&swkbd, password, sizeof(password)); 
             }
             if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
@@ -833,23 +786,15 @@ int main() {
                 }
             }
         }
-
-
-
-
-
-
-
-
+		
         /*
         
             Begin the frame, nothing actually starts drawing when you do this, it is still required.
         
         */
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-
-
-        /*
+	
+		/*
         
             Clear the screens with a color. Think of it like sliding a blank piece of paper on top of one with drawings on it.
         
@@ -885,13 +830,7 @@ int main() {
             }
         }
 
-
-
-
-
-
-
-        C2D_SceneBegin(bottom);
+		C2D_SceneBegin(bottom);
 
         if (scene == 1) {
             C2D_SceneBegin(top);
@@ -1022,13 +961,7 @@ int main() {
             }
         }
 
-
-
-
-
-
-
-        C3D_FrameEnd(0);
+		C3D_FrameEnd(0);
 
     }
 
