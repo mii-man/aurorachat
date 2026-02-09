@@ -11,7 +11,9 @@ import threading
 import socket
 from flask import session, redirect, url_for
 
-profanity.load_censor_words(whitelist_words=['yaoi', 'gay', 'lamo', 'frick', 'crap'])
+LATEST_VERSION = "4.2"
+
+
 # -- TCP Sockets --
 tcp_clients = []
 
@@ -76,12 +78,11 @@ os.makedirs(ACCOUNT_DIR, exist_ok=True)
 os.makedirs(BANNEDUSR_DIR, exist_ok=True)
 os.makedirs(ADMIN_DIR, exist_ok=True)
 
-# Profanity init
-profanity.load_censor_words()
+profanity.load_censor_words(whitelist_words=['yaoi', 'gay', 'lamo', 'frick', 'crap', 'fuck', 'god', 'shit', 'heck', 'hell', 'ass', 'stupid'])
 
 app = Flask(__name__)
 
-app.secret_key = "put a random key here"
+app.secret_key = "areogigow434978585739uygafbknafbfrauigoahoilhahairgiq8outy4837ty5gqjarkriugirqgwkakjagrfiukgoonhahagoon"
 
 # --- Helper Functions ---
 def sha256(data):
@@ -190,14 +191,13 @@ def processMessage(client,data):
             if len(censored_msg) > MAX_MESSAGE_LENGTH:
                   return {'data':"TOOLONG",'limit':str(MAX_MESSAGE_LENGTH)}
             latestMsg = f"{usernameWithIdentifier}: {data['content']}\n"
-            print(f"Received: {data} and parsed {censored_msg}")
             broadcast(f"{usernameWithIdentifier}: {censored_msg}\n")
             return {'data':"MSG_SENT"}
       else:
             return {'data':"NO_LOGIN"}
 
 # --- Client Handling ---
-def handleClient(address):
+def handleClient(address, data):
       filepath = os.path.join(BANNEDUSR_DIR, address)
       if not os.path.exists(filepath):
             client = Client()
@@ -212,8 +212,12 @@ def handleClient(address):
                   return
             connection_times[address] = now_ms
             clients[address] = client
-            print("Client connection established.")
-            return {'data':"CONNECT_OK"}
+            if not LATEST_VERSION in data['version']:
+                  print("Oudated Client connection established.")
+                  return {'data':"CONNECT_OK", 'info':"OUTDATED"}
+            if LATEST_VERSION in data['version']:
+                 print("Client connection established")
+                 return {'data':"CONNECT_OK"}
       else:
             print("A banned user tried to log in.")
             return {'data':"BANNED"}
@@ -232,7 +236,7 @@ def process_request():
       print(request.data)
       return {'data': 'NO_JSON'}, 400
     if request_json['cmd'] == "CONNECT":
-        response = handleClient(sha256(request.remote_addr))
+        response = handleClient(sha256(request.remote_addr), request_json)
     elif request_json['cmd'] == "MAKEACC":
         response = makeAccount(clients[sha256(request.remote_addr)], request_json)
     elif request_json['cmd'] == "LOGINACC":
@@ -252,7 +256,7 @@ def process_request():
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        if request.form['password'] == 'password here':
+        if request.form['password'] == 'goon':
             session['admin'] = True
             return redirect('/admin')
         return 'Invalid password', 401
