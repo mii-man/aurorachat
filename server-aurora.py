@@ -11,7 +11,7 @@ import threading
 import socket
 from flask import session, redirect, url_for
 
-
+profanity.load_censor_words(whitelist_words=['yaoi', 'gay', 'lamo', 'frick', 'crap'])
 # -- TCP Sockets --
 tcp_clients = []
 
