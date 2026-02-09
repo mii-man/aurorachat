@@ -5,23 +5,44 @@
   / _` | | | | '__/ _ \| '__/ _` |/ __| '_ \ / _` | __|
  | (_| | |_| | | | (_) | | | (_| | (__| | | | (_| | |_ 
   \__,_|\__,_|_|  \___/|_|  \__,_|\___|_| |_|\__,_|\__|                    
+             __  __     __  ______ __     
+            |__)|_ |  ||__)| |  | |_ |\ | 
+            | \ |__|/\|| \ | |  | |__| \| 
+                              
 
     Project initialized and owned by: mii-man
     Lead Developer: Virtualle / VirtuallyExisting
     Server Developed by: hackertron and Orstando
     Music by: Virtualle, manti-09
-    Commentary mostly by Virtualle
+    Commentary by: Virtualle
+
+
+
 
     This project was inspired by hbchat, a project created by Virtualle in October 2025, the project collapsed due to a doxxing that had 4 victims.
 
+
     Aurorachat is designed to remove the flawed, tangled mess of bugs and exploits that were in hbchat and make something that will inspire many and grow a community once more.
-	
+
+
+
+
+
     This code is owned underneath the license given with the project, if you are to distribute this code the license is required to be with the code.
     
-	Have a good day!
 
-	- Virtualle
+
+    This is a rewrite of the original aurorachat, remade to use aurorahttp by Orstando and to have much better choices. The comment you've just read was created by VirtuallyExisting / Virtualle, have a good day!
+
+
 */
+
+
+
+
+
+
+
 
 #include <3ds.h>
 #include <stdio.h>
@@ -32,6 +53,7 @@
 #include <opusfile.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+
 #include <3ds/applets/swkbd.h>
 
 /*
@@ -42,10 +64,14 @@
 
 */
 
+
 u32 size;
 u32 siz;
+
 u32 bw;
+
 u8 *buf;
+
 volatile bool downloadDone;
 
 typedef struct {
@@ -183,6 +209,8 @@ Thread startDownload(const char* url, const char* path) {
     }
     return thread;
 }
+
+
 
 
 Result http_post(const char* url, const char* data) {
@@ -422,6 +450,8 @@ Thread playSound(const char* path) {
     }
 }
 
+
+
 /*
 
     Sprite Tap Detection
@@ -502,14 +532,17 @@ char chat[3000] = "-chat-\n";
 void append_message(char* to_add) {
     size_t len = strlen(chat);
     size_t add_len = strlen(to_add);
-    int space_left = 3000 - len - 1;
+    int space_left = 2000 - len - 1;
 
-    if (add_len + 1 > space_left) return;
+    if (add_len + 1 > space_left) {
+        chat[0] = '\0';
+        chatscroll = 10.0f;
+    }
 
     // Copy to_add into chat with line breaks every 30 chars
     int i = 0;
     while (i < add_len) {
-        int chunk = (add_len - i >= 30) ? 30 : add_len - i;
+        int chunk = (add_len - i >= 50) ? 50 : add_len - i;
         strncat(chat, to_add + i, chunk);
         len = strlen(chat);
         if (i + chunk < add_len && len + 2 < 3000) {
@@ -520,18 +553,26 @@ void append_message(char* to_add) {
     chatscroll = chatscroll - 10;
 }
 
-// Main Variable Setup
 C2D_SpriteSheet spriteSheet;
 C2D_Sprite button;
 C2D_Sprite button2;
 C2D_Sprite button3;
 C2D_Sprite button4;
+
 int scene = 1;
+
 char password[21];
 char username[21];
+
 bool showpassword = false;
+
 char buftext[256];
+
 bool showpassjustpressed = false;
+
+bool outdated = false;
+
+
 
 /*
 
@@ -539,7 +580,9 @@ bool showpassjustpressed = false;
 
 */
 
+
 int main() {
+
     fsInit();
 	romfsInit();
     gfxInitDefault();
@@ -556,7 +599,11 @@ int main() {
     C2D_SpriteFromImage(&button3, C2D_SpriteSheetGetImage(spriteSheet, 0));
     C2D_SpriteFromImage(&button4, C2D_SpriteSheetGetImage(spriteSheet, 0));
 
-    http_post("https:///104.236.25.60:3072/api", "{\"cmd\":\"CONNECT\"}");
+    http_post("http://104.236.25.60:3072/api", "{\"cmd\":\"CONNECT\", \"version\":\"4.2\"}");
+    sprintf(buftext, "%s", buf);
+    if (strstr(buftext, "OUTDATED") != 0) {
+        outdated = true;
+    }
 
     sbuffer = C2D_TextBufNew(4096);
 
@@ -590,6 +637,14 @@ int main() {
         // placeholder
     }
 
+    u32 textcolor = C2D_Color32(0, 0, 0, 255);
+    u32 themecolor = C2D_Color32(255, 255, 255, 255);
+
+    bool darkmode = false;
+    
+
+
+
     /*
     
         This is what will run every frame. You have to be careful with things that MUST only be triggered once here.
@@ -606,6 +661,8 @@ int main() {
         */
         hidScanInput();
 
+
+
         fd_set readfds;
         struct timeval timeout;
 
@@ -617,17 +674,38 @@ int main() {
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
             if (len > 0) {
+
                 buffer[len] = '\0';
+
+
                 append_message(buffer);
             }
         }
+
+
+        if (hidKeysDown() & KEY_X) {
+            darkmode = !darkmode;
+        }
+
+        if (darkmode) {
+            textcolor = C2D_Color32(255, 255, 255, 200);
+            themecolor = C2D_Color32(0, 0, 0, 255);
+        }
+
+        if (!darkmode) {
+            textcolor = C2D_Color32(0, 0, 0, 255);
+            themecolor = C2D_Color32(255, 255, 255, 255);
+        }
+
+
+
 
         if (scene == 10) {
             if (hidKeysDown() & KEY_A) {
                 char msg[356];
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356);
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Say something...");
 
@@ -635,13 +713,13 @@ int main() {
 
                 char sender[460];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
-                http_post("https:///104.236.25.60:3072/api", sender);
+                http_post("http://104.236.25.60:3072/api", sender);
             }
             if (isSpriteTapped(&button, 0.8f, 0.8f)) {
                 char msg[356];
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356);
-                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 356); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Say something...");
 
@@ -649,7 +727,7 @@ int main() {
 
                 char sender[460];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", msg, username, password);
-                http_post("https:///104.236.25.60:3072/api", sender);
+                http_post("http://104.236.25.60:3072/api", sender);
             }
         }
 
@@ -671,7 +749,7 @@ int main() {
                 SwkbdState swkbd;
                 swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
                 swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT); // i added a cancel button, yippe
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0); // top ten stolen and EXPANDED from aurorachat
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Enter a username...");
 
                 SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
@@ -679,9 +757,9 @@ int main() {
 
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 SwkbdState swkbd;
-                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
-                swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY);
-                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21); // made the username limit even longer because 21 ha ha funny
+                swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY); // i added a cancel button, yippe
+                swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0); // top ten stolen and EXPANDED from aurorachat
                 swkbdSetHintText(&swkbd, "Enter a password...");
                 if (password) {
                     swkbdSetInitialText(&swkbd, password);
@@ -710,7 +788,7 @@ int main() {
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 char signuppostbody[128];
                 sprintf(signuppostbody, "{\"cmd\":\"MAKEACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
-                http_post("https:///104.236.25.60:3072/api", signuppostbody);
+                http_post("http://104.236.25.60:3072/api", signuppostbody);
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "USR_CREATED") != 0) {
                     scene = 1;
@@ -748,6 +826,7 @@ int main() {
                     swkbdSetPasswordMode(&swkbd, SWKBD_PASSWORD_HIDE_DELAY);
                 }
 
+
                 SwkbdButton button = swkbdInputText(&swkbd, password, sizeof(password)); 
             }
             if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
@@ -767,7 +846,7 @@ int main() {
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
                 char signuppostbody[128];
                 sprintf(signuppostbody, "{\"cmd\":\"LOGINACC\", \"username\":\"%s\", \"password\":\"%s\"}", username, password);
-                http_post("https:///104.236.25.60:3072/api", signuppostbody);
+                http_post("http://104.236.25.60:3072/api", signuppostbody);
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "LOGIN_OK") != 0) {
                     scene = 10;
@@ -786,30 +865,38 @@ int main() {
                 }
             }
         }
-		
+
+
+
+
+
+
+
+
         /*
         
             Begin the frame, nothing actually starts drawing when you do this, it is still required.
         
         */
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-	
-		/*
+
+
+        /*
         
             Clear the screens with a color. Think of it like sliding a blank piece of paper on top of one with drawings on it.
         
         */
-        C2D_TargetClear(top, C2D_Color32(255, 255, 255, 50));
-        C2D_TargetClear(bottom, C2D_Color32(255, 255, 255, 50));
+        C2D_TargetClear(top, themecolor);
+        C2D_TargetClear(bottom, themecolor);
 
         C2D_SceneBegin(top);
 
         DrawText("Aurorachat", 290.0f, 5.0f, 0, 0.7f, 0.7f, C2D_Color32(0, 0, 100, 200), true);
-        DrawText("version 4", 325.0f, 20.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 100, 200), true);
+        DrawText("version 4.2", 321.0f, 20.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 100, 200), true);
 
 
         if (scene == 10) {
-            DrawText(chat, 10.0f, chatscroll, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText(chat, 10.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
 
             C2D_SceneBegin(bottom);
 
@@ -819,8 +906,9 @@ int main() {
 
             DrawText("Send", 235.0f, 215.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
 
-            DrawText(": Send Message", 10.0f, 10.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
-            DrawText(": Scroll Chat", 10.0f, 30.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText(": Send Message", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolor, true);
+            DrawText(": Scroll Chat", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolor, true);
+            DrawText("X: Toggle Theme", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolor, true);
 
             if (hidKeysHeld() & KEY_UP) {
                 chatscroll = chatscroll + 5;
@@ -830,7 +918,19 @@ int main() {
             }
         }
 
-		C2D_SceneBegin(bottom);
+        if (outdated) {
+            DrawText("Outdated version. Update in Universal-Updater", 0.0f, 225.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), false);
+        }
+
+        
+
+
+
+
+
+
+
+        C2D_SceneBegin(bottom);
 
         if (scene == 1) {
             C2D_SceneBegin(top);
@@ -961,7 +1061,13 @@ int main() {
             }
         }
 
-		C3D_FrameEnd(0);
+
+
+
+
+
+
+        C3D_FrameEnd(0);
 
     }
 
