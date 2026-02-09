@@ -4,7 +4,7 @@
 
 
 <div align="center">
-  <a href="https://discord.gg/dCSgz7KERv">Join our Discord!</a> &nbsp;&nbsp;&nbsp;
+  <a href="https://tinyurl.com/auroracord">Join our Discord!</a> &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/ItsFuntum/aurorachat-wiiu">Wii U client</a>
 </div>
 
