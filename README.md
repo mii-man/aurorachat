@@ -27,7 +27,9 @@ This repository is <b>open</b> for contributions! If you'd like to, you may open
   
   | Version | Status | Changelog |
   |--------|--------|--------|
-  | v0.0.4.0 | In development | TLS verification, accounts, audio, GUI overhaul |
+  | v0.0.4.2 | Released | bug fixes|
+  | v0.0.4.1 | Released | bug fixes |
+  | v0.0.4.0 | Released | TLS verification, accounts, audio, GUI overhaul |
   | v0.0.3.9 | Maybe it was the friends we made along the way | Encryption, console-specific IDs |
   | v0.0.3.4 | Released | PC Client, security improvements as well as a stack increase |
   | v0.0.3.3 | Released | Fixed crash from duplicate theme text |
