@@ -37,10 +37,30 @@
 
 */
 
+/*
+.__          .__                   __                  __                      ._.
+|__| _____   |  |__ _____    ____ |  | __ ____________/  |________  ____   ____| |
+|  |/     \  |  |  \\__  \ _/ ___\|  |/ // __ \_  __ \   __\_  __ \/  _ \ /    \ |
+|  |  Y Y  \ |   Y  \/ __ \\  \___|    <\  ___/|  | \/|  |  |  | \(  <_> )   |  \|
+|__|__|_|  / |___|  (____  /\___  >__|_ \\___  >__|   |__|  |__|   \____/|___|  /_
+         \/       \/     \/     \/     \/    \/                               \/\/
+The comment you've just read was created by cool-guy-awesome / hackertron. I hope you liked it.
+
+
+You better like it.
+
+
+Or else.
 
 
 
 
+
+
+Have a great day!
+*/
+
+/* Oh yeah, and don't remove my newlines. Thanks! -hackertron */
 
 
 
