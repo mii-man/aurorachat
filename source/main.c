@@ -929,7 +929,17 @@ int main() {
             DrawText(": Send Message", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolor, true);
             DrawText(": Scroll Chat", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolor, true);
             DrawText("X: Toggle Theme", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("rules:", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("Rule 1: dont be a jerk", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("Rule 2: no nsfw", 10.0f, 130.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("Rule 3: no politcs", 10.0f, 150.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("Rule 4: no crimes", 10.0f, 170.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("breaking these rules may result in a ban", 10.0f, 190.0f, 0, 0.5f, 0.5f, textcolor, true);
+			DrawText("discord: https://discord.gg/dCSgz7KERv", 10.0f, 210.0f, 0, 0.5f, 0.5f, textcolor, true);
 
+
+
+					
             if (hidKeysHeld() & KEY_UP) {
                 chatscroll = chatscroll + 5;
             }
