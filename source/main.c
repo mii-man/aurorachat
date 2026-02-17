@@ -1166,7 +1166,7 @@ int main() {
                 DrawText("4. No harmful impersonation.", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("5. No violent behavior or language.", 10.0f, 130.0f, 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("6. No political discussion.", 10.0f, 150.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("6. No hackertron.", 10.0f, 170.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("7. No hackertron.", 10.0f, 170.0f, 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("We are not accepting ban appeals at this time.", 10.0f, 190.0f, 0, 0.5f, 0.5f, textcolorb, true);
 
                 if (hidKeysHeld() & KEY_UP) {
