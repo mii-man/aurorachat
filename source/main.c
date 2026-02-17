@@ -657,10 +657,20 @@ int main() {
         // placeholder
     }
 
-    u32 textcolor = C2D_Color32(0, 0, 0, 255);
+    u32 textcolor = C2D_Color32(0, 0, 0, 200);
     u32 themecolor = C2D_Color32(255, 255, 255, 255);
+    u32 textcolorb = C2D_Color32(0, 0, 0, 200);
+    u32 themecolorb = C2D_Color32(255, 255, 255, 255);
+    u32 logocolor = C2D_Color32(0, 0, 0, 200);
 
-    bool darkmode = false;
+    u32 textcolor_temp = C2D_Color32(0, 0, 0, 255);
+    u32 themecolor_temp = C2D_Color32(0, 0, 0, 255);
+
+    int darkmode = 0; /* keeping the name just in case but most of these are probably too bright lol */
+    bool reversi;
+    char currenttheme[20] = "none"; /* it'd be nice if it could tell you which one you're using... */
+
+    bool rulesvisible;
     
 
 
@@ -702,22 +712,217 @@ int main() {
             }
         }
 
+        /* MORE! THEMES! NOW!
+        >NORMAL THEMES<
+        
+        0 - Basic Light
+        1 - Basic Dark
+        2 - HBChat Legacy
+
+        3 - Glacier Plus (formerly Ivory Plus)
+        4 - Velvet Plus
+        5 - Slate Plus
+        6 - Pearl Plus
+        7 - Emerald Plus
+
+        >REVERSI-APPLICABLE THEMES<
+
+        8 - Lemon Soda
+        9 - Cinnamon
+        10 - Tropical
+        11 - Glacier
+        12 - Eyestrain Deluxe
+
+        + theme reversing with X cause you asked for it
+        */
+
+        if (hidKeysDown() & KEY_L) {
+            if (darkmode > 0) {
+                darkmode -= 1;
+            }
+            else {
+                darkmode = 12;
+            }
+        } /* Cycle through themes, counting up */
+
+        if (hidKeysDown() & KEY_R) {
+            if (darkmode < 12) {
+                darkmode += 1;
+            }
+            else {
+                darkmode = 0;
+            }
+        } /* Cycle through themes, counting down */
 
         if (hidKeysDown() & KEY_X) {
-            darkmode = !darkmode;
-        }
+            reversi = !reversi;
+        } /* it keeps updating so this is all i got */
 
-        if (darkmode) {
+        if (darkmode == 0) {
+            textcolor = C2D_Color32(0, 0, 0, 200);
+            themecolor = C2D_Color32(255, 255, 255, 255);
+            textcolorb = C2D_Color32(0, 0, 0, 200);
+            themecolorb = C2D_Color32(255, 255, 255, 255);
+            logocolor = C2D_Color32(0, 0, 100, 200);
+            strcpy(currenttheme, "Basic Light");
+        } /* Basic Light */
+
+        if (darkmode == 1) {
             textcolor = C2D_Color32(255, 255, 255, 200);
             themecolor = C2D_Color32(0, 0, 0, 255);
-        }
+            textcolorb = C2D_Color32(255, 255, 255, 200);
+            themecolorb = C2D_Color32(0, 0, 0, 255);
+            logocolor = C2D_Color32(0, 0, 100, 200);
+            strcpy(currenttheme, "Basic Dark");
+        } /* Basic Dark */
 
-        if (!darkmode) {
-            textcolor = C2D_Color32(0, 0, 0, 255);
-            themecolor = C2D_Color32(255, 255, 255, 255);
-        }
+        if (darkmode == 2) {
+            textcolor = C2D_Color32(0, 0, 0, 200);
+            themecolor = C2D_Color32(0, 0, 255, 255);
+            textcolorb = C2D_Color32(0, 0, 0, 200);
+            themecolorb = C2D_Color32(0, 0, 255, 255);
+            logocolor = C2D_Color32(0, 0, 0, 255);
+            strcpy(currenttheme, "HBChat Legacy");
+        } /* HBChat Legacy */
 
+        if (darkmode == 3) {
+            textcolor = C2D_Color32(106, 142, 174, 200);
+            themecolor = C2D_Color32(209, 250, 255, 255);
+            textcolorb = C2D_Color32(106, 142, 174, 200);
+            themecolorb = C2D_Color32(209, 250, 255, 255);
+            logocolor = C2D_Color32(54, 38, 167, 200);
+            strcpy(currenttheme, "Glacier Plus");
+        } /* Glacier Plus */
 
+        if (darkmode == 4) {
+            textcolor = C2D_Color32(157, 99, 129, 200);
+            themecolor = C2D_Color32(28, 2, 33, 255);
+            textcolorb = C2D_Color32(157, 99, 129, 200);
+            themecolorb = C2D_Color32(28, 2, 33, 255);
+            logocolor = C2D_Color32(255, 234, 238, 200);
+            strcpy(currenttheme, "Velvet Plus");
+        } /* Velvet Plus */
+
+        if (darkmode == 5) {
+            textcolor = C2D_Color32(199, 255, 237, 200);
+            themecolor = C2D_Color32(89, 101, 111, 255);
+            textcolorb = C2D_Color32(199, 255, 237, 200);
+            themecolorb = C2D_Color32(89, 101, 111, 255);
+            logocolor = C2D_Color32(255, 159, 28, 200);
+            strcpy(currenttheme, "Slate Plus");
+        } /* Slate Plus */
+
+        if (darkmode == 6) {
+            textcolor = C2D_Color32(255, 56, 100, 200);
+            themecolor = C2D_Color32(245, 215, 217, 255);
+            textcolorb = C2D_Color32(255, 56, 100, 200);
+            themecolorb = C2D_Color32(245, 215, 217, 255);
+            logocolor = C2D_Color32(72, 172, 240, 200);
+            strcpy(currenttheme, "Pearl Plus");
+        } /* Pearl Plus */
+
+        if (darkmode == 7) {
+            textcolor = C2D_Color32(189, 228, 168, 200);
+            themecolor = C2D_Color32(15, 82, 87, 255);
+            textcolorb = C2D_Color32(189, 228, 168, 200);
+            themecolorb = C2D_Color32(15, 82, 87, 255);
+            logocolor = C2D_Color32(234, 53, 70, 200);
+            strcpy(currenttheme, "Emerald Plus");
+        } /* Emerald Plus */
+
+        if (darkmode == 8) {
+            if (!reversi) {
+                textcolor = C2D_Color32(230, 57, 70, 200);
+                themecolor = C2D_Color32(254, 240, 204, 255);
+                textcolorb = C2D_Color32(16, 255, 203, 200);
+                themecolorb = C2D_Color32(40, 196, 200, 255);
+                logocolor = C2D_Color32(253, 26, 109, 200);
+            }
+            if (reversi) {
+                textcolor = C2D_Color32(16, 255, 203, 200);
+                themecolor = C2D_Color32(40, 196, 200, 255);
+                textcolorb = C2D_Color32(230, 57, 70, 200);
+                themecolorb = C2D_Color32(254, 240, 204, 255);
+                logocolor = C2D_Color32(253, 26, 109, 200);
+            }
+            strcpy(currenttheme, "Lemon Soda");
+        } /* Lemon Soda */
+
+        if (darkmode == 9) {
+            if (!reversi) {
+                textcolor = C2D_Color32(235, 212, 203, 200);
+                themecolor = C2D_Color32(182, 70, 95, 255);
+                textcolorb = C2D_Color32(218, 159, 147, 200);
+                themecolorb = C2D_Color32(137, 6, 32, 255);
+                logocolor = C2D_Color32(44, 7, 3, 200);
+            }
+            if (reversi) {
+                textcolor = C2D_Color32(218, 159, 147, 200);
+                themecolor = C2D_Color32(137, 6, 32, 255);
+                textcolorb = C2D_Color32(235, 212, 203, 200);
+                themecolorb = C2D_Color32(182, 70, 95, 255);
+                logocolor = C2D_Color32(44, 7, 3, 200);
+            }
+            strcpy(currenttheme, "Cinnamon");
+        } /* Cinnamon */
+
+        if (darkmode == 10) {
+            if (!reversi) {
+                textcolor = C2D_Color32(255, 217, 125, 200);
+                themecolor = C2D_Color32(255, 108, 74, 255);
+                textcolorb = C2D_Color32(170, 246, 131, 200);
+                themecolorb = C2D_Color32(59, 201, 123, 255);
+                logocolor = C2D_Color32(255, 255, 255, 200);
+            }
+            if (reversi) {
+                textcolor = C2D_Color32(170, 246, 131, 200);
+                themecolor = C2D_Color32(59, 201, 123, 255);
+                textcolorb = C2D_Color32(255, 217, 125, 200);
+                themecolorb = C2D_Color32(255, 108, 74, 255);
+                logocolor = C2D_Color32(255, 255, 255, 200);
+            }
+            strcpy(currenttheme, "Tropical");
+        } /* Tropical */
+
+        if (darkmode == 11) {
+            if (!reversi) {
+                textcolor = C2D_Color32(19, 64, 116, 200);
+                themecolor = C2D_Color32(238, 244, 237, 255);
+                textcolorb = C2D_Color32(141, 169, 196, 200);
+                themecolorb = C2D_Color32(11, 37, 69, 255);
+                logocolor = C2D_Color32(19, 49, 92, 200);
+            }
+            if (reversi) {
+                textcolor = C2D_Color32(141, 169, 196, 200);
+                themecolor = C2D_Color32(11, 37, 69, 255);
+                textcolorb = C2D_Color32(19, 64, 116, 200);
+                themecolorb = C2D_Color32(238, 244, 237, 255);
+                logocolor = C2D_Color32(19, 49, 92, 200);
+            }
+            strcpy(currenttheme, "Iceberg");
+        } /* Iceberg */
+
+        if (darkmode == 12) {
+            if (!reversi) {
+                textcolor = C2D_Color32(0, 255, 255, 200);
+                themecolor = C2D_Color32(255, 0, 0, 255);
+                textcolorb = C2D_Color32(255, 0, 255, 200);
+                themecolorb = C2D_Color32(0, 255, 0, 255);
+                logocolor = C2D_Color32(0, 0, 0, 200);
+            }
+            if (reversi) {
+                textcolor = C2D_Color32(255, 0, 255, 200);
+                themecolor = C2D_Color32(0, 255, 0, 255);
+                textcolorb = C2D_Color32(0, 255, 255, 200);
+                themecolorb = C2D_Color32(255, 0, 0, 255);
+                logocolor = C2D_Color32(0, 0, 0, 200);
+            }
+            strcpy(currenttheme, "Eyestrain Deluxe");
+        } /* Eyestrain Deluxe */
+
+        if (hidKeysDown() & KEY_Y) {
+            rulesvisible = !rulesvisible;
+        } /* You wanna see the rules, huh? Huh? Punk? */
 
 
         if (scene == 10) {
@@ -794,6 +999,10 @@ int main() {
             if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
                 scene = 4;
             }
+
+            if (hidKeysDown() & KEY_B) {
+                scene = 1;
+            }
         }
 
         if (scene == 4) {
@@ -829,6 +1038,7 @@ int main() {
                 swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
                 swkbdSetFeatures(&swkbd, SWKBD_PREDICTIVE_INPUT);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
+                swkbdSetHintText(&swkbd, "Enter your username...");
 
                 SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username));
             }
@@ -838,7 +1048,7 @@ int main() {
                 swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, 21);
                 swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
-                swkbdSetHintText(&swkbd, "Enter a password...");
+                swkbdSetHintText(&swkbd, "Enter your password...");
                 if (password) {
                     swkbdSetInitialText(&swkbd, password);
                 }
@@ -851,6 +1061,10 @@ int main() {
             }
             if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
                 scene = 5;
+            }
+
+            if (hidKeysDown() & KEY_B) {
+                scene = 1;
             }
         }
 
@@ -907,39 +1121,65 @@ int main() {
         
         */
         C2D_TargetClear(top, themecolor);
-        C2D_TargetClear(bottom, themecolor);
+        C2D_TargetClear(bottom, themecolorb);
 
         C2D_SceneBegin(top);
 
-        DrawText("Aurorachat", 290.0f, 5.0f, 0, 0.7f, 0.7f, C2D_Color32(0, 0, 100, 200), true);
-        DrawText("version 4.2", 321.0f, 20.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 100, 200), true);
+        DrawText("Aurorachat", 290.0f, 5.0f, 0, 0.7f, 0.7f, logocolor, true);
+        DrawText("version 4.3", 321.0f, 20.0f, 0, 0.5f, 0.5f, logocolor, true);
 
 
         if (scene == 10) {
             DrawText(chat, 10.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
 
             C2D_SceneBegin(bottom);
+            if (!rulesvisible) {
+                C2D_SpriteSetPos(&button, 200.0f, 200.0f);
+                C2D_SpriteSetScale(&button, 0.4f, 0.4f);
+                C2D_DrawSprite(&button);
 
-            C2D_SpriteSetPos(&button, 200.0f, 200.0f);
-            C2D_SpriteSetScale(&button, 0.4f, 0.4f);
-            C2D_DrawSprite(&button);
+                DrawText("Send", 235.0f, 215.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
 
-            DrawText("Send", 235.0f, 215.0f, 0, 0.6f, 0.6f, C2D_Color32(0, 0, 0, 100), true);
+                DrawText(": Send Message", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText(", : Scroll Chat", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText(": View Rules", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText(", : Toggle Theme", 10.0f, 70.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText(": Reverse Theme", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                char themealert[40];
+                sprintf(themealert, "Current Theme:\n%s", currenttheme);
+                DrawText(themealert, 10.0f, 200.0f, 0, 0.5f, 0.5f, textcolorb, true);
 
-            DrawText(": Send Message", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolor, true);
-            DrawText(": Scroll Chat", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolor, true);
-            DrawText("X: Toggle Theme", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolor, true);
+                if (hidKeysHeld() & KEY_UP) {
+                    chatscroll = chatscroll + 5;
+                }
+                if (hidKeysHeld() & KEY_DOWN) {
+                    chatscroll = chatscroll - 5;
+                }
 
-            if (hidKeysHeld() & KEY_UP) {
-                chatscroll = chatscroll + 5;
             }
-            if (hidKeysHeld() & KEY_DOWN) {
-                chatscroll = chatscroll - 5;
+            if (rulesvisible) {
+                DrawText(": Hide Rules", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("1. No racism, sexism, homophobia, or", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("other prejudiced language or behavior.", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("2. No spamming.", 10.0f, 70.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("3. No hunting.", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("4. No harmful impersonation.", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("5. No violent behavior or language.", 10.0f, 130.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("6. No political discussion.", 10.0f, 150.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("6. No hackertron.", 10.0f, 170.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("We are not accepting ban appeals at this time.", 10.0f, 190.0f, 0, 0.5f, 0.5f, textcolorb, true);
+
+                if (hidKeysHeld() & KEY_UP) {
+                    chatscroll = chatscroll + 5;
+                }
+                if (hidKeysHeld() & KEY_DOWN) {
+                    chatscroll = chatscroll - 5;
+                }
             }
         }
 
         if (outdated) {
-            DrawText("Outdated version. Update in Universal-Updater", 0.0f, 225.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), false);
+            DrawText("Outdated version. Update in Universal-Updater", 0.0f, 225.0f, 0, 0.5f, 0.5f, textcolor, false);
         }
 
         
@@ -954,7 +1194,7 @@ int main() {
 
         if (scene == 1) {
             C2D_SceneBegin(top);
-            DrawText("Sign Up or Sign In", 150.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText("Sign Up or Sign In", 150.0f, 70.0f, 0, 0.5f, 0.5f, textcolor, true);
             C2D_SceneBegin(bottom);
             C2D_SpriteSetPos(&button, 75.0f, 50.0f);
             C2D_SpriteSetScale(&button, 0.4f, 0.4f);
@@ -968,8 +1208,8 @@ int main() {
 
         if (scene == 2) {
             C2D_SceneBegin(top);
-            DrawText("Sign Up", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
-            DrawText("Enter a username and password.", 100.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            DrawText("Sign Up", 175.0f, 70.0f, 0, 0.5f, 0.5f, textcolor, true);
+            DrawText("Enter a username and password.", 100.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
             C2D_SceneBegin(bottom);
             C2D_SpriteSetPos(&button, 75.0f, 50.0f);
             C2D_SpriteSetScale(&button, 0.4f, 0.4f);
@@ -987,8 +1227,8 @@ int main() {
 
         if (scene == 3) {
             C2D_SceneBegin(top);
-            DrawText("Sign In", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
-            DrawText("Enter your username and password.", 90.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            DrawText("Sign In", 175.0f, 70.0f, 0, 0.5f, 0.5f, textcolor, true);
+            DrawText("Enter your username and password.", 90.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
             C2D_SceneBegin(bottom);
             C2D_SpriteSetPos(&button, 75.0f, 50.0f);
             C2D_SpriteSetScale(&button, 0.4f, 0.4f);
@@ -1006,7 +1246,7 @@ int main() {
 
         if (scene == 4) {
             C2D_SceneBegin(top);
-            DrawText("Confirm", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText("Confirm", 175.0f, 70.0f, 0, 0.5f, 0.5f, textcolor, true);
             char confirmation[256];
             if (showpassword) {
                 sprintf(confirmation, "Username: %s\nPassword: %s", username, password);
@@ -1014,7 +1254,7 @@ int main() {
             if (!showpassword) {
                 sprintf(confirmation, "Username: %s\nPassword: (hidden)", username);
             }
-            DrawText(confirmation, 140.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            DrawText(confirmation, 140.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
             C2D_SceneBegin(bottom);
             C2D_SpriteSetPos(&button2, 75.0f, 50.0f);
             C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
@@ -1028,7 +1268,7 @@ int main() {
 
         if (scene == 5) {
             C2D_SceneBegin(top);
-            DrawText("Confirm", 175.0f, 70.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), true);
+            DrawText("Confirm", 175.0f, 70.0f, 0, 0.5f, 0.5f, textcolor, true);
             char confirmation[256];
             if (showpassword) {
                 sprintf(confirmation, "Username: %s\nPassword: %s", username, password);
@@ -1036,7 +1276,7 @@ int main() {
             if (!showpassword) {
                 sprintf(confirmation, "Username: %s\nPassword: (hidden)", username);
             }
-            DrawText(confirmation, 140.0f, 90.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 120), true);
+            DrawText(confirmation, 140.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
             C2D_SceneBegin(bottom);
             C2D_SpriteSetPos(&button2, 75.0f, 50.0f);
             C2D_SpriteSetScale(&button2, 0.4f, 0.4f);
@@ -1051,15 +1291,15 @@ int main() {
 
         if (scene == 61) {
             C2D_SceneBegin(top);
-            DrawText("API is down. Restart to try again.", 100.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
+            DrawText("API is down. Restart to try again.", 100.0f, 100.0f, 0, 0.5f, 0.5f, textcolor, false);
             C2D_SceneBegin(bottom);
         }
 
         if (scene == 67) {
             C2D_SceneBegin(top);
             char debugger[280];
-            DrawText("Account already exists.", 140.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
-            DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), true);
+            DrawText("Account already exists.", 140.0f, 100.0f, 0, 0.5f, 0.5f, textcolor, false);
+            DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, textcolor, true);
             sprintf(debugger, "Debug: %s", buftext);
             DrawText(debugger, 0.0f, 225.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), false);
 
@@ -1071,10 +1311,10 @@ int main() {
         if (scene == 68) {
             C2D_SceneBegin(top);
             char debugger[280];
-            DrawText("Invalid Credentials", 140.0f, 100.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 255), false);
-            DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), true);
+            DrawText("Invalid Credentials", 140.0f, 100.0f, 0, 0.5f, 0.5f, textcolor, false);
+            DrawText("Press B to go back to the account screen.", 65.0f, 130.0f, 0, 0.5f, 0.5f, textcolor, true);
             sprintf(debugger, "Debug: %s", buftext);
-            DrawText(debugger, 0.0f, 225.0f, 0, 0.5f, 0.5f, C2D_Color32(0, 0, 0, 100), false);
+            DrawText(debugger, 0.0f, 225.0f, 0, 0.5f, 0.5f, textcolor, false);
 
             if (hidKeysDown() & KEY_B) {
                 scene = 1;
