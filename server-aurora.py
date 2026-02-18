@@ -60,6 +60,8 @@ PORT = 8961
 RATE_LIMIT_MS = 1999  # one more millisecond of grace
 MAX_MESSAGE_LENGTH = 456  # holy yappery
 TERMINATION_TRIGGER = "Fleetway"
+FLASK_SECRET_KEY = "[redacted]" # MAKE SURE TO REDACT BEFORE COMMITTING!!
+PANEL_PASSWORD = "[redacted]"
 
 # --- Global State ---
 clients = {}
@@ -82,7 +84,7 @@ profanity.load_censor_words(whitelist_words=['yaoi', 'gay', 'lamo', 'frick', 'cr
 
 app = Flask(__name__)
 
-app.secret_key = "areogigow434978585739uygafbknafbfrauigoahoilhahairgiq8outy4837ty5gqjarkriugirqgwkakjagrfiukgoonhahagoon"
+app.secret_key = FLASK_SECRET_KEY
 
 # --- Helper Functions ---
 def sha256(data):
@@ -256,7 +258,7 @@ def process_request():
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        if request.form['password'] == 'goon':
+        if request.form['password'] == PANEL_PASSWORD:
             session['admin'] = True
             return redirect('/admin')
         return 'Invalid password', 401
