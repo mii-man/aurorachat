@@ -670,7 +670,7 @@ int main() {
     bool reversi;
     char currenttheme[20] = "none"; /* it'd be nice if it could tell you which one you're using... */
 
-    bool rulesvisible;
+    int rulesvisible = 0;
     
 
 
@@ -921,8 +921,13 @@ int main() {
         } /* Eyestrain Deluxe */
 
         if (hidKeysDown() & KEY_Y) {
-            rulesvisible = !rulesvisible;
-        } /* You wanna see the rules, huh? Huh? Punk? */
+            if (rulesvisible < 3) {
+                rulesvisible += 1;
+            }
+            else {
+                rulesvisible = 0;
+            }
+        } /* You wanna see the rules, huh? Huh? Punk? */ // moved to int so there can be rule pages
 
 
         if (scene == 10) {
@@ -1133,7 +1138,7 @@ int main() {
             DrawText(chat, 10.0f, chatscroll, 0, 0.5f, 0.5f, textcolor, true);
 
             C2D_SceneBegin(bottom);
-            if (!rulesvisible) {
+            if (rulesvisible == 0) {
                 C2D_SpriteSetPos(&button, 200.0f, 200.0f);
                 C2D_SpriteSetScale(&button, 0.4f, 0.4f);
                 C2D_DrawSprite(&button);
@@ -1148,33 +1153,56 @@ int main() {
                 char themealert[40];
                 sprintf(themealert, "Current Theme:\n%s", currenttheme);
                 DrawText(themealert, 10.0f, 200.0f, 0, 0.5f, 0.5f, textcolorb, true);
-
-                if (hidKeysHeld() & KEY_UP) {
-                    chatscroll = chatscroll + 5;
-                }
-                if (hidKeysHeld() & KEY_DOWN) {
-                    chatscroll = chatscroll - 5;
-                }
-
             }
-            if (rulesvisible) {
-                DrawText(": Hide Rules", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("1. No racism, sexism, homophobia, or", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("other prejudiced language or behavior.", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("2. No spamming.", 10.0f, 70.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("3. No hunting.", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("4. No harmful impersonation.", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("5. No violent behavior or language.", 10.0f, 130.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("6. No political discussion.", 10.0f, 150.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("7. No hackertron.", 10.0f, 170.0f, 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("We are not accepting ban appeals at this time.", 10.0f, 190.0f, 0, 0.5f, 0.5f, textcolorb, true);
 
-                if (hidKeysHeld() & KEY_UP) {
+            if (rulesvisible == 1) {
+                DrawText(": Next Page", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("1. No racist, sexist, homophobic, or other", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("prejudiced language or behavior, whether it's", 10.0f, 40.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("aimed at another user or not.", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("2. No asking for or sharing personal info of", 10.0f, 80.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("yourself or anyone else. This includes name,", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("age, gender, location, phone number, email", 10.0f, 100.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("address, or any other personally identifiable", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("information. Doxxing (or the threat of doing so)", 10.0f, 120.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("is grounds for a ban.", 10.0f, 130.0f, 0, 0.5f, 0.5f, textcolorb, true);
+            }
+
+            if (rulesvisible == 2) {
+                DrawText(": Next Page", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("3. No overly violent or sexual behavior or", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("language, including threats of violence or harm", 10.0f, 40.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("of ANY kind. This includes threats or", 10.0f, 50.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("discussion of harming yourself.", 10.0f, 60, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("4. No political discussion. Usernames of", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("political figures are allowed (with some", 10.0f, 100.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("exceptions), but any language that could incite", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("arguments may get you banned.", 10.0f, 120.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("5. No impersonation of developers,", 10.0f, 150.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("moderators, admin, or any other Aurorachat", 10.0f, 160.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("staff. Additionally, ANY impersonation for the", 10.0f, 170.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("sake of harrassing another user is not allowed.", 10.0f, 180.0f, 0, 0.5f, 0.5f, textcolorb, true);
+            }
+
+            if (rulesvisible == 3) {
+                DrawText(": Close Rules", 10.0f, 10.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("6. No spamming.", 10.0f, 30.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("7. No hunting.", 10.0f, 45.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("8. No hackertron", 10.0f, 60.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("Friend code sharing is allowed, but please do", 10.0f, 90.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("not harrass or pressure other users for their", 10.0f, 100.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("friend codes.", 10.0f, 110.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("Want access to the rest of Unitendo? Join our", 10.0f, 150.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("official Discord server here:", 10.0f, 160.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("discord.gg/dCSgz7KERv", 10.0f, 175.0f, 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("We are not accepting ban appeals at this time.", 10.0f, 210.0f, 0, 0.5f, 0.5f, textcolorb, true);
+            }
+
+            if (hidKeysHeld() & KEY_UP) {
                     chatscroll = chatscroll + 5;
-                }
-                if (hidKeysHeld() & KEY_DOWN) {
+            }
+            if (hidKeysHeld() & KEY_DOWN) {
                     chatscroll = chatscroll - 5;
-                }
             }
         }
 
