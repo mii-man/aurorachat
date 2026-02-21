@@ -667,7 +667,7 @@ int main() {
     u32 themecolor_temp = C2D_Color32(0, 0, 0, 255);
 
     int darkmode = 0; /* keeping the name just in case but most of these are probably too bright lol */
-    int themecount = 18; // just in case--it's actually one less
+    int themecount = 19; // just in case--it's actually one less
     bool reversi;
     char currenttheme[30] = "none"; /* it'd be nice if it could tell you which one you're using... */
 
