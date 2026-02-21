@@ -667,7 +667,7 @@ int main() {
     u32 themecolor_temp = C2D_Color32(0, 0, 0, 255);
 
     int darkmode = 0; /* keeping the name just in case but most of these are probably too bright lol */
-    int themecount = 18; // just in case--it's actually one less
+    int themecount = 19; // just in case--it's actually one less
     bool reversi;
     char currenttheme[30] = "none"; /* it'd be nice if it could tell you which one you're using... */
 
@@ -737,10 +737,11 @@ int main() {
         >USER-SUBMISSION THEMES<
         13 - Bread Guy's Theme (Bread Guy)
         14 - hacker torn tyehme. (cool guy)
-        15 - Slowpoke Pink (Slow)
-        16 - Sky (DJ)
-        17 - GB Green (Slow)
-        18 - Homebrew Blue (Slow)
+        15 - P3 Phosphor (waydoing)
+		16 - Slowpoke Pink (Slow)
+        17 - Sky (DJ)
+        18 - GB Green (Slow)
+        19 - Homebrew Blue (Slow)
 
         + theme reversing with X cause you asked for it
         */
@@ -950,6 +951,15 @@ int main() {
         } /* hacker torn tyehme. */
 
         if (darkmode == 15) {
+			textcolor = C2D_Color32(255, 176, 0, 255);
+			themecolor = C2D_Color32(28, 28, 28, 255);
+			textcolorb = C2D_Color32(255, 176, 0, 255);
+			themecolorb = C2D_Color32(28, 28, 28, 255);
+			logocolor = C2D_Color32(255, 176, 0, 255);
+			strcpy(currenttheme, "P3 Phosphor");
+		} /* P3 Phosphor */
+		
+		if (darkmode == 16) {
             textcolor = C2D_Color32(9, 44, 84, 200);
             themecolor = C2D_Color32(245, 120, 198, 255);
             textcolorb = C2D_Color32(9, 44, 84, 200);
@@ -958,7 +968,7 @@ int main() {
             strcpy(currenttheme, "Slowpoke Pink");
         } /* Slowpoke Pink */
 
-        if (darkmode == 16) {
+        if (darkmode == 17) {
             textcolor = C2D_Color32(241, 241, 241, 200);
             themecolor = C2D_Color32(99, 183, 219, 255);
             textcolorb = C2D_Color32(241, 241, 241, 200);
@@ -967,7 +977,7 @@ int main() {
             strcpy(currenttheme, "Sky");
         } /* Sky */
 
-        if (darkmode == 17) {
+        if (darkmode == 18) {
             if (!reversi) {
                 textcolor = C2D_Color32(32, 91, 92, 200);
                 themecolor = C2D_Color32(159, 228, 97, 255);
@@ -985,7 +995,7 @@ int main() {
             strcpy(currenttheme, "GB Green");
         } /* GB Green */
 
-        if (darkmode == 18) {
+        if (darkmode == 19) {
             if (!reversi) {
                 textcolor = C2D_Color32(203, 231, 255, 200);
                 themecolor = C2D_Color32(0, 132, 255, 255);
