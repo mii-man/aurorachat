@@ -1337,6 +1337,14 @@ int main() {
                     DrawText("10. Be excellent to each other. Act", 10.0f, (480.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                     DrawText("respectfully towards other chatters,", 10.0f, (490.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                     DrawText("and don't harass or bully others.", 10.0f, (500.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("11. you must be 13 years of age or older", 10.0f, (530.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("to use Aurorachat. This is partially to avoid", 10.0f, (540.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("conflicting with the Discord tos, as we have", 10.0f, (550.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("Aurorachat/Discord cross chat, but also to ", 10.0f, (560.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("avoid having the chat made up of annoying children", 10.0f, (570.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("(no offense) and having them endanger themselves by ", 10.0f, (580.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("being on social media. If it is found that you are", 10.0f, (590.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+					DrawText("under 13, you will be banned", 10.0f, (600.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                     }
                 else {
                     DrawText("1. No saying oatmeal", 10.0f, (30.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
