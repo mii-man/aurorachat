@@ -1418,6 +1418,7 @@ int main() {
                 DrawText("virtualleee", 10.0f, (560.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("virxti", 10.0f, (570.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("wildfire0196", 10.0f, (580.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+				DrawText("manti09_isnt_avalible", 10.0f, (590.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 //wrap here
                 DrawText("Aurorachat:", 170.0f, (360.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("at", 170.0f, (370.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
@@ -1482,7 +1483,7 @@ int main() {
                 DrawText("Lead dev: Virtually existing", 10.0f, (60.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
 				DrawText("Server devs: Orstando, Cool-guy-awesome", 10.0f, (70.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
 				DrawText("Client devs: at-real, Virtually existing", 10.0f, (80.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-				DrawText("Art/music: at-real, Virtually existing", 10.0f, (80.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+				DrawText("Art/music: felisdeceptionist aka high, manti, Virtually existing", 10.0f, (90.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 C2D_DrawRectSolid(0.0f, 0.0f, 0, 320.0f, 30.0f, themecolor); // hashtag my rectsolid
                 DrawText(": Close Page | , : Scroll Rules", 10.0f, 10.0f, 0.0f, 0.5f, 0.5f, textcolor, true);
             }
