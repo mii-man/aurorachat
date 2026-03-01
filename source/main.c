@@ -1065,7 +1065,7 @@ int main() {
         }
 
         if (hidKeysDown() & KEY_Y) {
-            if (rulesvisible < 3) {
+            if (rulesvisible < 4) {
                 if (rulesvisible == 0) { //only roll for silly on the first press, not on subsequent ones
                     silly = rand() % 10; // all odds must be in multiples of 10%
                     chatlock = true; //stop the chat from scrolling while the rules are open
@@ -1473,6 +1473,16 @@ int main() {
                 DrawText("The changelog is a work in", 10.0f, (30.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("progress. Check back soon for", 10.0f, (40.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("new features we've added!", 10.0f, (50.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                C2D_DrawRectSolid(0.0f, 0.0f, 0, 320.0f, 30.0f, themecolor); // hashtag my rectsolid
+                DrawText(": Close Page | , : Scroll Rules", 10.0f, 10.0f, 0.0f, 0.5f, 0.5f, textcolor, true);
+            }
+			if (rulesvisible == 4) { // changelog here
+                DrawText("Credits:", 15.0f, (30.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("Creator: mii-man", 10.0f, (50.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("Lead dev: Virtually existing", 10.0f, (60.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+				DrawText("Server devs: Orstando, Cool-guy-awesome", 10.0f, (70.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+				DrawText("Client devs: at-real, Virtually existing", 10.0f, (80.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+				DrawText("Art/music: at-real, Virtually existing", 10.0f, (80.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 C2D_DrawRectSolid(0.0f, 0.0f, 0, 320.0f, 30.0f, themecolor); // hashtag my rectsolid
                 DrawText(": Close Page | , : Scroll Rules", 10.0f, 10.0f, 0.0f, 0.5f, 0.5f, textcolor, true);
             }
