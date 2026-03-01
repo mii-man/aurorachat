@@ -1,3 +1,11 @@
+# ascii art cuz why not
+#    _                             ____
+#   / \  _   _ _ __ ___  _ __ __ _/ ___|  ___ _ ____   _____ _ __
+#  / _ \| | | | '__/ _ \| '__/ _` \___ \ / _ \ '__\ \ / / _ \ '__|
+# / ___ \ |_| | | | (_) | | | (_| |___) |  __/ |   \ V /  __/ |
+#/_/   \_\__,_|_|  \___/|_|  \__,_|____/ \___|_|    \_/ \___|_|
+# the main server for aurorachat
+# made using flask and socket
 from flask import Flask, jsonify, request
 from flask import session, redirect, url_for
 import threading
@@ -39,7 +47,6 @@ os.makedirs(ACCOUNT_DIR, exist_ok=True)
 os.makedirs(BANNEDUSR_DIR, exist_ok=True)
 os.makedirs(ADMIN_DIR, exist_ok=True)
 os.makedirs(KNOWNUSR_DIR, exist_ok=True)
-
 # -- TCP Sockets --
 tcp_clients = []
 
@@ -109,7 +116,6 @@ class Client:
       def __init__(self):
             self.username = None
             self.loggedin = False
-
 # --- Command Parsing ---
 def makeAccount(client,data):
       if all(key in data for key in ['username','password']): # Make sure username and password exist
@@ -234,6 +240,7 @@ def rootRedirect():
 
 @app.route('/api', methods=['POST'])
 def process_request():
+    server_running.wait()
     global latestMsg
     request_json = request.get_json(silent=True)
     if not request_json:
