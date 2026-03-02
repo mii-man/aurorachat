@@ -622,7 +622,7 @@ int main() {
     C2D_SpriteFromImage(&button3, C2D_SpriteSheetGetImage(spriteSheet, 0));
     C2D_SpriteFromImage(&button4, C2D_SpriteSheetGetImage(spriteSheet, 0));
 
-    http_post("http://104.236.25.60:3072/api", "{\"cmd\":\"CONNECT\", \"version\":\"4.3\"}");
+    http_post("http://104.236.25.60:3072/api", "{\"cmd\":\"CONNECT\", \"version\":\"4.5\"}");
     sprintf(buftext, "%s", buf);
     if (strstr(buftext, "OUTDATED") != 0) {
         outdated = true;
@@ -753,7 +753,7 @@ int main() {
 
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
-            if (len > 0) {
+            if (len > 0 & len < 365) {
 
                 buffer[len] = '\0';
 
@@ -1091,7 +1091,7 @@ int main() {
 
                 SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
 
-                char sender[460];
+                char sender[600];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\", \"platform\":\"%s\"}", msg, username, password, detectsystem);
                 http_post("http://104.236.25.60:3072/api", sender);
             }
@@ -1105,7 +1105,7 @@ int main() {
 
                 SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
 
-                char sender[460];
+                char sender[600];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\", \"platform\":\"%s\"}", msg, username, password, detectsystem);
                 http_post("http://104.236.25.60:3072/api", sender);
             }
