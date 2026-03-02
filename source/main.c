@@ -1427,15 +1427,15 @@ int main() {
                 DrawText("john", 170.0f, (410.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("Kal", 170.0f, (420.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("orstando", 170.0f, (430.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("redthunderpower", 170.0f, (440.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("Seal", 170.0f, (450.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("sertarulcelmagic", 170.0f, (460.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("Unitendo", 170.0f, (470.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("virt", 170.0f, (480.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("'virtualel premium'", 170.0f, (490.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("virtualle", 170.0f, (500.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("Wildfire", 170.0f, (510.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
-                DrawText("wildfire", 170.0f, (520.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+
+                DrawText("Seal", 170.0f, (440.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("sertarulcelmagic", 170.0f, (450.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("Unitendo", 170.0f, (460.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("virt", 170.0f, (470.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("'virtualel premium'", 170.0f, (480.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("virtualle", 170.0f, (490.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("Wildfire", 170.0f, (500.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
+                DrawText("wildfire", 170.0f, (510.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 //and resume here
                 DrawText("Note: most users appear on both lists,", 20.0f, (590.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
                 DrawText("but they're not lined up properly here.", 20.0f, (600.0f + rulescroll), 0, 0.5f, 0.5f, textcolorb, true);
