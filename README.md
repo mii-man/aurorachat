@@ -10,8 +10,8 @@
 <h1 align="center">Downloads</h1>
 
 <div align="center">
-  <a href="https://github.com/mii-man/aurorachat/releases">Nightly Builds</a> &nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/mii-man/aurorachat/actions">Stable Builds</a>
+  <a href="https://github.com/mii-man/aurorachat/releases">Stable Builds</a> &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/mii-man/aurorachat/actions">Nightly Builds</a>
 </div>
 
 <h1 align="center">Welcome to the aurorachat repository!</h1>
