@@ -7,6 +7,8 @@
   <a href="https://github.com/ItsFuntum/aurorachat-wiiu">Wii U client</a>
 </div>
 
+<h1 align="center">Downloads</h1>
+
 <div align="center">
   <a href="https://github.com/mii-man/aurorachat/releases">Nightly Builds</a> &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/mii-man/aurorachat/actions">Stable Builds</a>
