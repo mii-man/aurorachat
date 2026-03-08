@@ -573,7 +573,21 @@ void append_message(char* to_add) {
         }
         i += chunk;
     }
-    chatscroll = chatscroll - 10;
+    chatscroll = chatscroll - 21;
+}
+
+/*
+
+    show_error
+    Author: Virtualle and nebulagamez
+    Note: Fairly simple, just to make error displaying easier
+
+*/
+void show_error(const char* errtext) {
+    errorConf err;
+    errorInit(&err, ERROR_TEXT, CFG_LANGUAGE_EN); // This initializes the error module with the language set as English, this way it doesn't get messy with a region-changed 3DS
+    errorText(&err, errtext);
+    errorDisp(&err);
 }
 
 C2D_SpriteSheet spriteSheet;
@@ -626,6 +640,10 @@ int main() {
     sprintf(buftext, "%s", buf);
     if (strstr(buftext, "OUTDATED") != 0) {
         outdated = true;
+    }
+    if (strstr(buftext, "BANNED") != 0) {
+        show_error("You're banned.\nWe aren't accepting appeals at this time.");
+        return 0;
     }
 
     sbuffer = C2D_TextBufNew(4096);
@@ -697,7 +715,7 @@ int main() {
     cfguInit();
     u8 model = 7;
     CFGU_GetSystemModel(&model);
-    cfguExit();
+    // You're not going anywhere buddy
 
     char detectsystem[10];
     switch (model) {
@@ -759,6 +777,9 @@ int main() {
 
 
                 append_message(buffer);
+                if (strstr(buffer, "barned") != 0 & (strstr(buffer, "[SYSTEM]") != 0)) {
+                    playSound("romfs:/barned.opus");
+                }
             }
         }
 
@@ -1094,6 +1115,12 @@ int main() {
                 char sender[600];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\", \"platform\":\"%s\"}", msg, username, password, detectsystem);
                 http_post("http://104.236.25.60:3072/api", sender);
+
+                sprintf(buftext, "%s", buf);
+                if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe are not accepting appeals at this time.");
+                    return 0;
+                }
             }
             if (isSpriteTapped(&button, 0.8f, 0.8f)) {
                 char msg[356];
@@ -1108,6 +1135,12 @@ int main() {
                 char sender[600];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\", \"platform\":\"%s\"}", msg, username, password, detectsystem);
                 http_post("http://104.236.25.60:3072/api", sender);
+
+                sprintf(buftext, "%s", buf);
+                if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe are not accepting appeals at this time.");
+                    return 0;
+                }
             }
         }
 
@@ -1179,9 +1212,19 @@ int main() {
                 }
                 if (strcmp(buftext, "(null)") == 0) {
                     scene = 61;
+                    show_error("The API is experiencing issues.\nTry again later.");
                 }
                 if (strstr(buftext, "USR_IN_USE") != 0) {
+                    show_error("The username you created is already in use.\nPlease try again.");
                     scene = 67;
+                }
+                if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe are not accepting appeals at this time.");
+                    return 0;
+                }
+                if (strstr(buftext, "ILLEGAL") != 0) {
+                    show_error("Your username contained illegal characters.\nRewrite your username.");
+                    scene = 2;
                 }
             }
         }
@@ -1245,12 +1288,21 @@ int main() {
                 }
                 if (strcmp(buftext, "(null)") == 0) {
                     scene = 61;
+                    show_error("The API is experiencing issues.\nTry again later.");
                 }
                 if (strstr(buftext, "LOGIN_WRONG_PASS") != 0) {
                     scene = 68;
+                    show_error("The password entered is invalid.\nPlease try again.");
                 }
                 if (strstr(buftext, "LOGIN_FAKE_ACC") != 0) {
                     scene = 68;
+                    char coolthingmessageyknow[75];
+                    sprintf(coolthingmessageyknow, "The account %s does not exist. Did you make a typo?", username);
+                    show_error(coolthingmessageyknow);
+                }
+                if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe aren't accepting appeals at this time.");
+                    return 0;
                 }
             }
         }
@@ -1281,7 +1333,7 @@ int main() {
         C2D_SceneBegin(top);
 
         DrawText("Aurorachat", 290.0f, 5.0f, 0, 0.7f, 0.7f, logocolor, true);
-        DrawText("version 4.3", 321.0f, 20.0f, 0, 0.5f, 0.5f, logocolor, true);
+        DrawText("version 4.5", 321.0f, 20.0f, 0, 0.5f, 0.5f, logocolor, true);
 
 
         if (scene == 10) {
@@ -1526,7 +1578,7 @@ int main() {
         if (scene == 2) {
             C2D_SceneBegin(top);
             DrawText("Sign Up", 175.0f, 70.0f, 0, 0.5f, 0.5f, textcolor, true);
-            DrawText("Enter a username and password.", 100.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
+            DrawText("Enter a username and password. (It cannot contain \\, /, or a space.)", 100.0f, 90.0f, 0, 0.5f, 0.5f, textcolor, true);
             C2D_SceneBegin(bottom);
             C2D_SpriteSetPos(&button, 75.0f, 50.0f);
             C2D_SpriteSetScale(&button, 0.4f, 0.4f);
@@ -1663,6 +1715,7 @@ int main() {
     C2D_TextBufDelete(sbuffer);
     C2D_Fini();
     C3D_Fini();
+    cfguExit();
 
     fsExit();
     romfsExit();
