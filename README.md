@@ -7,14 +7,11 @@
   <a href="https://github.com/ItsFuntum/aurorachat-wiiu">Wii U client</a>
 </div>
 
-‎
+<h1 align="center">Downloads</h1>
+
 <div align="center">
-  <h2>Where can I download stable builds?</h2>
-  <p>Go to our <a href="https://github.com/mii-man/aurorachat/releases">GitHub Releases!</a></p>
-</div>
-<div align="center">‎ 
-  ‎ <h2>Where can I get immediate, easy builds?</h2>
-  ‎ <p>Github Actions automatically provides us with builds! <a href="https://github.com/mii-man/aurorachat/actions/workflows/build.yml">Choose the latest run and download the build in the Summary page!</a></p>
+  <a href="https://github.com/mii-man/aurorachat/releases">Stable Builds</a> &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/mii-man/aurorachat/actions">Nightly Builds</a>
 </div>
 
 <h1 align="center">Welcome to the aurorachat repository!</h1>
