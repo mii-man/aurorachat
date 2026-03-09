@@ -780,6 +780,9 @@ int main() {
                 if (strstr(buffer, "barned") != 0 & (strstr(buffer, "[SYSTEM]") != 0)) {
                     playSound("romfs:/barned.opus");
                 }
+                if (strstr(buffer, "war") != 0 & (strstr(buffer, "[SYSTEM]") != 0)) {
+                    playSound("romfs:/war.opus");
+				}
             }
         }
 
