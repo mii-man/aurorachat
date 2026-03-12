@@ -35,6 +35,7 @@ build/
 *.smdh
 *.3dsx
 *.elf
+*.t3x
 
 # Debug files
 *.dSYM/

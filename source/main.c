@@ -132,6 +132,7 @@ bool download(const char* url_str, const char* path) {
     cstring url = cstr_new(url_str);
     downloadDone = false;
     bool success = false;
+    u8* data = NULL;
 
     while (true) {
         if (CHECK_RESULT("httpcOpenContext", httpcOpenContext(&context, HTTPC_METHOD_GET, url.data, 0))) goto cleanup;
@@ -175,7 +176,7 @@ bool download(const char* url_str, const char* path) {
         goto close;
     }
 
-    u8* data = malloc(0x4000);
+    data = malloc(0x4000);
     if (!data) {
         FSFILE_Close(fileHandle);
         FSUSER_CloseArchive(sdmcRoot);
@@ -290,7 +291,7 @@ Result http_post(const char* url, const char* data) {
         }
 
         if (statuscode != 200) {
-            printf("HTTP Error: %x\n", statuscode);
+            printf("HTTP Error: %lu\n", statuscode);
             ret = -2;
             break;
         }
@@ -471,6 +472,8 @@ Thread playSound(const char* path) {
         Thread thread = threadCreate(audioThreadFunc, data, 0x10000, 0x1F, -2, true);
         return thread; // Returns NULL on failure
     }
+
+    return NULL;
 }
 
 
@@ -701,12 +704,12 @@ int main() {
 
     int darkmode = 0; /* keeping the name just in case but most of these are probably too bright lol */
     int themecount = 20; // just in case--it's actually one less
-    int reversi; // ask and you shall receive
+    int reversi = 0; // ask and you shall receive
     char currenttheme[30] = "none"; /* it'd be nice if it could tell you which one you're using... */
     char thememode[16] = "none";
 
     int rulesvisible = 0;
-    bool chatlock; //true to scroll rules, false to scroll chat
+    bool chatlock = false; //true to scroll rules, false to scroll chat
     float rulescroll = 0.0f; //chatscroll for da rules
     
     int silly = 0; //used for the silly rules check
@@ -771,16 +774,16 @@ int main() {
 
         if (select(sock + 1, &readfds, NULL, NULL, &timeout) > 0) {
             ssize_t len = recv(sock, buffer, sizeof(buffer)-1, 0);
-            if (len > 0 & len < 365) {
+            if (len > 0 && len < 365) {
 
                 buffer[len] = '\0';
 
 
                 append_message(buffer);
-                if (strstr(buffer, "barned") != 0 & (strstr(buffer, "[SYSTEM]") != 0)) {
+                if (strstr(buffer, "barned") != 0 && (strstr(buffer, "[SYSTEM]") != 0)) {
                     playSound("romfs:/barned.opus");
                 }
-                if (strstr(buffer, "war") != 0 & (strstr(buffer, "[SYSTEM]") != 0)) {
+                if (strstr(buffer, "war") != 0 && (strstr(buffer, "[SYSTEM]") != 0)) {
                     playSound("romfs:/war.opus");
 				}
             }
@@ -1113,7 +1116,7 @@ int main() {
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Say something...");
 
-                SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
+                swkbdInputText(&swkbd, msg, sizeof(msg));
 
                 char sender[600];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\", \"platform\":\"%s\"}", msg, username, password, detectsystem);
@@ -1133,7 +1136,7 @@ int main() {
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Say something...");
 
-                SwkbdButton button = swkbdInputText(&swkbd, msg, sizeof(msg));
+                swkbdInputText(&swkbd, msg, sizeof(msg));
 
                 char sender[600];
                 sprintf(sender, "{\"cmd\":\"CHAT\", \"content\":\"%s\", \"username\":\"%s\", \"password\":\"%s\", \"platform\":\"%s\"}", msg, username, password, detectsystem);
@@ -1168,7 +1171,7 @@ int main() {
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Enter a username...");
 
-                SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username)); 
+                swkbdInputText(&swkbd, username, sizeof(username)); 
             }
 
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
@@ -1177,7 +1180,7 @@ int main() {
                 swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY); // i added a cancel button, yippe
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0); // top ten stolen and EXPANDED from aurorachat
                 swkbdSetHintText(&swkbd, "Enter a password...");
-                if (password) {
+                if (password[0] != '\0') { // Not empty
                     swkbdSetInitialText(&swkbd, password);
                 }
                 if (!showpassword) {
@@ -1185,7 +1188,7 @@ int main() {
                 }
 
 
-                SwkbdButton button = swkbdInputText(&swkbd, password, sizeof(password)); 
+                swkbdInputText(&swkbd, password, sizeof(password)); 
             }
             if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
                 scene = 4;
@@ -1241,7 +1244,7 @@ int main() {
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Enter your username...");
 
-                SwkbdButton button = swkbdInputText(&swkbd, username, sizeof(username));
+                swkbdInputText(&swkbd, username, sizeof(username));
             }
 
             if (isSpriteTapped(&button2, 0.8f, 0.8f)) {
@@ -1250,7 +1253,7 @@ int main() {
                 swkbdSetFeatures(&swkbd, SWKBD_DEFAULT_QWERTY);
                 swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY, 0, 0);
                 swkbdSetHintText(&swkbd, "Enter your password...");
-                if (password) {
+                if (password[0] != '\0') { // Not empty
                     swkbdSetInitialText(&swkbd, password);
                 }
                 if (!showpassword) { // I implemented this but I refuse to use it because IM EVIL.
@@ -1258,7 +1261,7 @@ int main() {
                 }
 
 
-                SwkbdButton button = swkbdInputText(&swkbd, password, sizeof(password)); 
+                swkbdInputText(&swkbd, password, sizeof(password)); 
             }
             if (isSpriteTapped(&button3, 0.8f, 0.8f)) {
                 scene = 5;
