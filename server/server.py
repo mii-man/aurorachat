@@ -20,16 +20,16 @@ import syscmd
 # --- Configuration ---
 load_dotenv()
 HOST = os.getenv('HOST')
-HTTP_PORT = int(os.getenv('HTTP_PORT'))
-TCP_PORT = int(os.getenv('TCP_PORT'))
-LATEST_VERSION = os.getenv('LATEST_VERSION')
-RATE_LIMIT_MS = int(os.getenv('RATE_LIMIT_MS'))
-MAX_MESSAGE_LENGTH = int(os.getenv('MAX_MESSAGE_LENGTH'))
-USERNAME_MAX_CHARS = int(os.getenv('USERNAME_MAX_CHARS'))
-PASSWORD_MAX_CHARS = int(os.getenv('PASSWORD_MAX_CHARS'))
-TERMINATION_TRIGGER = os.getenv('TERMINATION_TRIGGER')
-FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY')
-RAWCHAT_KEY = os.getenv('RAWCHAT_KEY')
+HTTP_PORT = int(os.getenv('AUC_HTTP_PORT'))
+TCP_PORT = int(os.getenv('AUC_TCP_PORT'))
+LATEST_VERSION = os.getenv('AUC_LATEST_VERSION')
+RATE_LIMIT_MS = int(os.getenv('AUC_RATE_LIMIT_MS'))
+MAX_MESSAGE_LENGTH = int(os.getenv('AUC_MAX_MESSAGE_LENGTH'))
+USERNAME_MAX_CHARS = int(os.getenv('AUC_USERNAME_MAX_CHARS'))
+PASSWORD_MAX_CHARS = int(os.getenv('AUC_PASSWORD_MAX_CHARS'))
+TERMINATION_TRIGGER = os.getenv('AUC_TERMINATION_TRIGGER')
+FLASK_SECRET_KEY = os.getenv('AUC_FLASK_SECRET_KEY')
+RAWCHAT_KEY = os.getenv('AUC_RAWCHAT_KEY')
 
 # i think at some point these should all be merged, for example one acc file with password/is banned/is admin/is known/tag on separate lines
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -115,7 +115,7 @@ msg_lock = threading.Lock()
 profanity.load_censor_words(whitelist_words=['yaoi', 'gay', 'lamo', 'frick', 'crap', 'fuck', 'god', 'shit', 'heck', 'hell', 'ass', 'stupid', 'murder', 'uzi', 'weed', 'piss', 'kill'])
 profanity.add_censor_words(["67"])
 
-app = Flask(__name__,static_folder='static')
+app = Flask(__name__)
 
 app.secret_key = FLASK_SECRET_KEY
 
