@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
+from flask import render_template
 from flask import session, redirect, url_for
 import threading
 import time
@@ -19,26 +20,39 @@ from flask_cors import CORS
 
 # --- Configuration ---
 HOST = '0.0.0.0'
-PORT = 8961
-LATEST_VERSION = "4.3"
+HTTP_PORT = 3072
+TCP_PORT = 4040
+LATEST_VERSION = "4.5"
 RATE_LIMIT_MS = 1998  # one more millisecond of grace # another millisecond of grace
 MAX_MESSAGE_LENGTH = 457  # holy yappery #one extra letter of yap
+USERNAME_MAX_CHARS = 25
+PASSWORD_MAX_CHARS = 40
 TERMINATION_TRIGGER = "Fleetway"
 FLASK_SECRET_KEY = "[redacted]" # MAKE SURE TO REDACT BEFORE COMMITTING!!
 PANEL_PASSWORD = "[redacted]"
 RAWCHAT_KEY = "[redacted]"
 
+# i think at some point these should all be merged, for example one acc file with password/is banned/is admin/is known/tag on separate lines
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ACCOUNT_DIR = os.path.join(SCRIPT_DIR, "accounts")
 BANNEDUSR_DIR = os.path.join(SCRIPT_DIR, "bannedusers")
+ACCOUNTIPS_DIR = os.path.join(SCRIPT_DIR, "accountips")
 BANNEDIP_DIR = os.path.join(SCRIPT_DIR, "bannedips")
 ADMIN_DIR = os.path.join(SCRIPT_DIR, "admins")
-KNOWNUSR_DIR = os.path.join(SCRIPT_DIR, "knownusers") # at some point this should be merged with the normal account files
+KNOWNUSR_DIR = os.path.join(SCRIPT_DIR, "knownusers")
+TAG_DIR = os.path.join(SCRIPT_DIR, "usertags")
 
 os.makedirs(ACCOUNT_DIR, exist_ok=True)
 os.makedirs(BANNEDUSR_DIR, exist_ok=True)
+os.makedirs(BANNEDIP_DIR, exist_ok=True)
+os.makedirs(ACCOUNTIPS_DIR, exist_ok=True)
 os.makedirs(ADMIN_DIR, exist_ok=True)
 os.makedirs(KNOWNUSR_DIR, exist_ok=True)
+os.makedirs(TAG_DIR, exist_ok=True)
+
+# virt u put this globalization here and its horrifying (-orstando)
+# global userCount
+userCount = 0
 
 # -- TCP Sockets --
 tcp_clients = []
@@ -47,6 +61,17 @@ def broadcast(message):
     for client in tcp_clients[:]:
         try:
             client.sendall(message.encode('utf-8'))
+        except:
+            global userCount
+            userCount -= 1
+            tcp_clients.remove(client)
+            
+    socketio.emit('message', message)
+
+def systembroadcast(message):
+    for client in tcp_clients[:]:
+        try:
+            client.sendall("(Server) *[SYSTEM]*: ".encode('utf-8') + message.encode('utf-8'))
         except:
             tcp_clients.remove(client)
             
@@ -68,7 +93,7 @@ def handle_tcp_client(client_socket):
 def start_tcp_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(('0.0.0.0', 4040))
+    server.bind(('0.0.0.0', TCP_PORT))
     server.listen(5)
     print("AuroraTCP running on port 4040")
 
@@ -76,6 +101,8 @@ def start_tcp_server():
         client_sock, addr = server.accept()
         print("Client connected through TCP")
         tcp_clients.append(client_sock)
+        global userCount
+        userCount += 1
         t = threading.Thread(target=handle_tcp_client, args=(client_sock,), daemon=True)
         t.start()
 
@@ -89,7 +116,7 @@ msg_lock = threading.Lock()
 profanity.load_censor_words(whitelist_words=['yaoi', 'gay', 'lamo', 'frick', 'crap', 'fuck', 'god', 'shit', 'heck', 'hell', 'ass', 'stupid', 'murder', 'uzi', 'weed', 'piss', 'kill'])
 profanity.add_censor_words(["67"])
 
-app = Flask(__name__)
+app = Flask(__name__,static_folder='static')
 
 app.secret_key = FLASK_SECRET_KEY
 
@@ -110,11 +137,22 @@ class Client:
             self.username = None
             self.loggedin = False
 
+def checkAdmin(user):
+   filepath = os.path.join(ADMIN_DIR, user)
+   if os.path.exists(filepath):
+      return True
+   return False
+
 # --- Command Parsing ---
+
 def makeAccount(client,data):
       if all(key in data for key in ['username','password']): # Make sure username and password exist
             username = data['username']
             password = data['password']
+            if "\\" in username or "/" in username or " " in username or len(username) > USERNAME_MAX_CHARS:
+                 return {'data':'ILLEGAL'}
+            if len(password) > PASSWORD_MAX_CHARS:
+                 return {'data':'ILLEGAL'}
             filepath = os.path.join(ACCOUNT_DIR, username)
             if not os.path.exists(filepath):
                   hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -126,13 +164,13 @@ def makeAccount(client,data):
                   return {'data':"USR_IN_USE"}
                   print("Account exists bro get out")
 
-def loginAccount(client,data):
+def loginAccount(client,data, ip):
       if all(key in data for key in ['username','password']): # Make sure username and password exist
             username = data['username']
             password = data['password']
             if TERMINATION_TRIGGER in username:
                   try:
-                        return {'data':TERMINATION_TRIGGER.lower()}
+                        return {'data':"UNAMETRIGGER"}
                   except Exception:
                         pass
                   print(f"lmaooo {TERMINATION_TRIGGER.lower()} detected get this guy OUT")
@@ -147,6 +185,8 @@ def loginAccount(client,data):
                               print("User logged in!")
                               client.username = username
                               client.loggedin = True
+                              with open(os.path.join(ACCOUNTIPS_DIR, username), 'wb') as f:
+                                    f.write(ip.encode('utf-8'))
                               return {'data':"LOGIN_OK"}
                         else:
                               print("Invalid password.")
@@ -160,15 +200,18 @@ def loginAccount(client,data):
 
 def processMessage(client,data):
       global latestMsg
-        if data['cmd'] == "RAWCHAT":
-            if data['rawkey'] == RAWCHAT_KEY: #put whatever you want for the key
-                broadcast(data['content'])
+      if data['cmd'] == "RAWCHAT":
+            if data['rawkey'] == RAWCHAT_KEY:
+                broadcast(f"{data['content']}\n")
                 return {'data':"MSG_SENT"}
             else:
                 print("dont try to rawchat without the key")
                 return {'data':"WRONG_KEY"}
-        else:
+      else:
           if (client.loggedin):
+                
+                if (len(data['platform']) > 30):
+                     return {'data':"ILLEGAL"}
     
                 filepath2 = os.path.join(BANNEDUSR_DIR, client.username)
                 if os.path.exists(filepath2):
@@ -180,18 +223,27 @@ def processMessage(client,data):
                       typeIdentifier = "[]"
                 elif data['cmd'] == "INTCHAT":
                       typeIdentifier = "{}"
-                usernameWithIdentifier = f"{typeIdentifier[0]}{client.username}{typeIdentifier[1]}"
+                tag = " "
+                if os.path.exists(os.path.join(TAG_DIR, client.username)):
+                      with open(os.path.join(TAG_DIR, client.username)) as f:
+                            tag = f" ~{f.read().strip()}~ "
+                elif checkAdmin(client.username):
+                      tag = " ~Moderator~ "
+                usernameWithIdentifier = f"({data['platform']}){tag}{typeIdentifier[0]}{client.username}{typeIdentifier[1]}"
+                
                 censored_msg = profanity.censor(data['content'].strip(), '*')
-                now = int(time.time() * 1000)
-                last_msg = rate_limit.get(client, 0)
-                if now - last_msg < RATE_LIMIT_MS:
-                      return {'data':"SPAM",'limit':str(RATE_LIMIT_MS)}
-                rate_limit[client] = now
+                if not checkAdmin(client.username):
+                  now = int(time.time() * 1000)
+                  last_msg = rate_limit.get(client, 0)
+                  if now - last_msg < RATE_LIMIT_MS:
+                        return {'data':"SPAM",'limit':str(RATE_LIMIT_MS)}
+                  rate_limit[client] = now
+
                 if len(censored_msg) > MAX_MESSAGE_LENGTH:
                       return {'data':"TOOLONG",'limit':str(MAX_MESSAGE_LENGTH)}
                 latestMsg = f"{usernameWithIdentifier}: {data['content']}\n"
                 broadcast(f"{usernameWithIdentifier}: {censored_msg}\n")
-                cmdResult = syscmd.checkCmd(client.username,data['content'],[ACCOUNT_DIR,BANNEDUSR_DIR,BANNEDIP_DIR,ADMIN_DIR,KNOWNUSR_DIR],broadcast)
+                syscmd.checkCmd(client.username,data['content'],broadcast)
                 return {'data':"MSG_SENT"}
           else:
                 return {'data':"NO_LOGIN"}
@@ -240,29 +292,30 @@ def process_request():
       print(request.data)
       return {'data': 'NO_JSON'}, 400
     if request_json['cmd'] == "CONNECT":
-        response = handleClient(sha256(request.remote_addr), request_json)
+        response = handleClient(request.remote_addr, request_json)
     elif request_json['cmd'] == "MAKEACC":
-        response = makeAccount(clients[sha256(request.remote_addr)], request_json)
+        response = makeAccount(clients[request.remote_addr], request_json)
     elif request_json['cmd'] == "LOGINACC":
-        response = loginAccount(clients[sha256(request.remote_addr)], request_json)
+        response = loginAccount(clients[request.remote_addr], request_json, request.remote_addr)
     elif request_json['cmd'] in ["CHAT", "BOTCHAT", "INTCHAT", "RAWCHAT"]:
-        response = processMessage(clients[sha256(request.remote_addr)], request_json)
+        response = processMessage(clients[request.remote_addr], request_json)
     else:
         print("Command not recognized.")
         response = {'data': "BADCMD"}
     return response
 
+# Grab auroraweb
+@app.route("/web")
+def auoraweb():
+    return render_template('auroraweb.html')
 
-
-
-# This panel is simple and untested. I wouldn't suggest using it. Set a cryptographically random password so it can't be cracked.
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        if os.path.isfile(request.form['username']):
-            with open(os.path.join(ADMIN_DIR,request.form['username']) as f:
-                if request.form['password'] == f.read():
+        if os.path.isfile(os.path.join(ADMIN_DIR,request.form['username'])):
+            with open(os.path.join(ADMIN_DIR,request.form['username']), 'rb') as f:
+                if bcrypt.checkpw(request.form['password'].encode('utf-8'), f.read()):
                     session['admin'] = True
                     return redirect('/admin')
         return 'Invalid username or password', 401
@@ -280,18 +333,65 @@ def admin():
         return redirect('/admin/login')
     return '''
     <form method="POST" action="/ban">
-        <input name="username" placeholder="Username to ban" required>
-        <button>Ban User</button>
+        <input name="value" id="value" placeholder="Username to ban" required><br>
+        <input name="reason" id="reason" placeholder="Ban reason"><br id="reasonbr">
+        <select name="type" id="type" onchange="change()">
+            <option value="user">User</option>
+            <option value="ip">IP</option>
+        </select>
+        <select name="mode" id="mode" onchange="change()">
+            <option value="ban">Ban</option>
+            <option value="unban">Unban</option>
+        </select><br>
+        <button id="submit">Ban User</button>
     </form>
+    <script>
+    function change() {
+        if (document.getElementById("type").value == "user") {
+            if (document.getElementById("mode").value == "ban") {
+                document.getElementById("submit").innerHTML = "Ban User";
+                document.getElementById("value").setAttribute('placeholder','Username to ban');
+                document.getElementById("reason").style.display="inline";
+                document.getElementById("reasonbr").style.display="inline"
+            } else if (document.getElementById("mode").value == "unban") {
+                document.getElementById("submit").innerHTML = "Unban User";
+                document.getElementById("value").setAttribute('placeholder','Username to unban');
+                document.getElementById("reason").style.display="none";
+                document.getElementById("reasonbr").style.display="none"
+            }
+        } else if (document.getElementById("type").value == "ip") {
+            if (document.getElementById("mode").value == "ban") {
+                document.getElementById("submit").innerHTML = "Ban IP";
+                document.getElementById("value").setAttribute('placeholder','IP to ban');
+                document.getElementById("reason").style.display="inline";
+                document.getElementById("reasonbr").style.display="inline"
+            } else if (document.getElementById("mode").value == "unban") {
+                document.getElementById("submit").innerHTML = "Unban IP";
+                document.getElementById("value").setAttribute('placeholder','IP to unban');
+                document.getElementById("reason").style.display="none";
+                document.getElementById("reasonbr").style.display="inline"
+            }
+        }
+    }
+    </script>
     '''
 
 @app.route('/ban', methods=['POST'])
 def ban_user():
     if not session.get('admin'):
         return 'Unauthorized', 403
-    username = request.form['username']
-    with open(os.path.join(BANNEDUSR_DIR, username), 'w') as f:
-        f.write('banned')
+    value = request.form['value']
+    type = request.form['type'] # user / ip
+    mode = request.form['mode'] # ban / unban
+    if type == 'user':
+        dir = BANNEDUSR_DIR
+    elif type == 'ip':
+        dir = BANNEDIP_DIR
+    if mode == 'ban':
+        with open(os.path.join(dir, value), 'w') as f:
+            f.write(request.form['reason'])
+    elif mode == 'unban':
+        os.remove(os.path.join(dir, value))
     return redirect('/admin')
 
 
@@ -305,4 +405,4 @@ def handle_connect():
 
 
 if __name__ == "__main__":
-      socketio.run(app, host="0.0.0.0", port=3072, use_reloader=False)
+      socketio.run(app, host="0.0.0.0", port=HTTP_PORT, use_reloader=False)
