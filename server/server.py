@@ -29,7 +29,6 @@ USERNAME_MAX_CHARS = int(os.getenv('USERNAME_MAX_CHARS'))
 PASSWORD_MAX_CHARS = int(os.getenv('PASSWORD_MAX_CHARS'))
 TERMINATION_TRIGGER = os.getenv('TERMINATION_TRIGGER')
 FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY')
-PANEL_PASSWORD = os.getenv('PANEL_PASSWORD')
 RAWCHAT_KEY = os.getenv('RAWCHAT_KEY')
 
 # i think at some point these should all be merged, for example one acc file with password/is banned/is admin/is known/tag on separate lines
