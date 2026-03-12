@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask import render_template
 from flask import session, redirect, url_for
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 import threading
 import time
 import sys
@@ -11,26 +13,24 @@ import bcrypt
 import hashlib
 import threading
 import socket
+from dotenv import load_dotenv
 
 import syscmd
 
-from flask import session, redirect, url_for
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
-
 # --- Configuration ---
-HOST = '0.0.0.0'
-HTTP_PORT = 3072
-TCP_PORT = 4040
-LATEST_VERSION = "4.5"
-RATE_LIMIT_MS = 1998  # one more millisecond of grace # another millisecond of grace
-MAX_MESSAGE_LENGTH = 457  # holy yappery #one extra letter of yap
-USERNAME_MAX_CHARS = 25
-PASSWORD_MAX_CHARS = 40
-TERMINATION_TRIGGER = "Fleetway"
-FLASK_SECRET_KEY = "[redacted]" # MAKE SURE TO REDACT BEFORE COMMITTING!!
-PANEL_PASSWORD = "[redacted]"
-RAWCHAT_KEY = "[redacted]"
+load_dotenv()
+HOST = os.getenv('HOST')
+HTTP_PORT = int(os.getenv('HTTP_PORT'))
+TCP_PORT = int(os.getenv('TCP_PORT'))
+LATEST_VERSION = os.getenv('LATEST_VERSION')
+RATE_LIMIT_MS = int(os.getenv('RATE_LIMIT_MS'))
+MAX_MESSAGE_LENGTH = int(os.getenv('MAX_MESSAGE_LENGTH'))
+USERNAME_MAX_CHARS = int(os.getenv('USERNAME_MAX_CHARS'))
+PASSWORD_MAX_CHARS = int(os.getenv('PASSWORD_MAX_CHARS'))
+TERMINATION_TRIGGER = os.getenv('TERMINATION_TRIGGER')
+FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY')
+PANEL_PASSWORD = os.getenv('PANEL_PASSWORD')
+RAWCHAT_KEY = os.getenv('RAWCHAT_KEY')
 
 # i think at some point these should all be merged, for example one acc file with password/is banned/is admin/is known/tag on separate lines
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
