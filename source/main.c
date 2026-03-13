@@ -1124,6 +1124,7 @@ int main() {
 
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe are not accepting appeals at this time.");
                     return 0;
                 }
             }
@@ -1143,6 +1144,7 @@ int main() {
 
                 sprintf(buftext, "%s", buf);
                 if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe are not accepting appeals at this time.");
                     return 0;
                 }
             }
@@ -1216,14 +1218,18 @@ int main() {
                 }
                 if (strcmp(buftext, "(null)") == 0) {
                     scene = 61;
+                    show_error("The API is experiencing issues.\nTry again later.");
                 }
                 if (strstr(buftext, "USR_IN_USE") != 0) {
+                    show_error("The username you created is already in use.\nPlease try again.");
                     scene = 67;
                 }
                 if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe are not accepting appeals at this time.");
                     return 0;
                 }
                 if (strstr(buftext, "ILLEGAL") != 0) {
+                    show_error("Your username contained illegal characters.\nRewrite your username.");
                     scene = 2;
                 }
             }
@@ -1288,16 +1294,20 @@ int main() {
                 }
                 if (strcmp(buftext, "(null)") == 0) {
                     scene = 61;
+                    show_error("The API is experiencing issues.\nTry again later.");
                 }
                 if (strstr(buftext, "LOGIN_WRONG_PASS") != 0) {
                     scene = 68;
+                    show_error("The password entered is invalid.\nPlease try again.");
                 }
                 if (strstr(buftext, "LOGIN_FAKE_ACC") != 0) {
                     scene = 68;
                     char coolthingmessageyknow[75];
                     sprintf(coolthingmessageyknow, "The account %s does not exist. Did you make a typo?", username);
+                    show_error(coolthingmessageyknow);
                 }
                 if (strstr(buftext, "BANNED") != 0) {
+                    show_error("You've been banned.\nWe aren't accepting appeals at this time.");
                     return 0;
                 }
             }
